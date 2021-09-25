@@ -82,7 +82,7 @@ uint8_t step(struct Nes* nes) {
 }
 
 void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
-    nes->status &= !(1 << n); // clear nth bit
+    nes->status &= ~(1 << n); // clear nth bit
     nes->status |= val << n; // set nth bit to val
 }
 
@@ -238,7 +238,7 @@ void adc(struct Nes* nes) {
 
 void sbc(struct Nes* nes) {
 	uint8_t old_acc = nes->acc;
-	uint8_t val = !cpu_read(nes, nes->micro_addr);
+	uint8_t val = ~cpu_read(nes, nes->micro_addr);
 	nes->acc += val + (nes->status & 1 << STATUS_FLAG_CARRY > 0);
 
 	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
