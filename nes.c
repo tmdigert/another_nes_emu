@@ -23,6 +23,25 @@ uint8_t step(struct Nes* nes) {
     uint8_t cycles = 0xFF; //
     uint8_t oops = 0x00;
     switch (op) {
+		case 0xE9: cycles = (addrm_imm(nes), sbc(nes), 2); break;
+		case 0xE5: cycles = (addrm_zp(nes), sbc(nes), 3); break;
+		case 0xF5: cycles = (addrm_zpx(nes), sbc(nes), 4); break;
+		case 0xED: cycles = (addrm_abs(nes), sbc(nes), 4); break;
+		case 0xFD: cycles = (oops = addrm_abx(nes), sbc(nes), 4 + oops); break;
+		case 0xF9: cycles = (oops = addrm_aby(nes), sbc(nes), 4 + oops); break;
+		case 0xE1: cycles = (addrm_inx(nes), sbc(nes), 6); break;
+		case 0xF1: cycles = (oops = addrm_iny(nes), sbc(nes), 5 + oops); break;
+
+    	// adc
+		case 0x69: cycles = (addrm_imm(nes), adc(nes), 2); break;
+		case 0x65: cycles = (addrm_zp(nes), adc(nes), 3); break;
+		case 0x75: cycles = (addrm_zpx(nes), adc(nes), 4); break;
+		case 0x6D: cycles = (addrm_abs(nes), adc(nes), 4); break;
+		case 0x7D: cycles = (oops = addrm_abx(nes), adc(nes), 4 + oops); break;
+		case 0x79: cycles = (oops = addrm_aby(nes), adc(nes), 4 + oops); break;
+		case 0x61: cycles = (addrm_inx(nes), adc(nes), 6); break;
+		case 0x71: cycles = (oops = addrm_iny(nes), adc(nes), 5 + oops); break;
+
         // sta
         case 0x85: cycles = (addrm_zp(nes), sta(nes), 3); break;
         case 0x95: cycles = (addrm_zpx(nes), sta(nes), 4); break;
