@@ -28,10 +28,10 @@ void init_nes(struct Nes*);
 void free_nes(struct Nes*);
 
 // exec
-int step(struct Nes*);
+uint8_t step(struct Nes*);
 
 // misc
-void set_flag(struct Nes*, uint8_t, bool);
+void set_flag(struct Nes*, uint8_t, uint8_t);
 
 // read/write
 // https://wiki.nesdev.org/w/index.php/CPU_memory_map
@@ -39,7 +39,7 @@ uint8_t cpu_read(struct Nes*, uint16_t);
 void cpu_write(struct Nes*, uint16_t, uint8_t);
 
 // as far as I'm aware, this is called for reach op
-void fetch_op(struct Nes*);
+uint8_t fetch_op(struct Nes*);
 
 // addressing modes (https://wiki.nesdev.org/w/index.php/CPU_addressing_modes)
 void 	addrm_imp(struct Nes*); // ex. ROL A
