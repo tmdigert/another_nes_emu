@@ -193,6 +193,13 @@ void lda(struct Nes* nes) {
 }
 
 void sta(struct Nes* nes){
-	nes->micro_addr = nes->acc;
+	cpu_write(nes, nes->micro_addr, nes->acc);
 }
 
+void stx(struct Nes* nes){
+	cpu_write(nes, nes->micro_addr, nes->x);
+}
+
+void sty(struct Nes* nes){
+	cpu_write(nes, nes->micro_addr, nes->y);
+}
