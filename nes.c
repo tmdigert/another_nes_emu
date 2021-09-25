@@ -22,6 +22,19 @@ void step(struct Nes* nes) {
 	//
 	uint8_t cycles = 0xFF; //
 	switch (op) {
+		case 0x85: cycles = (addrm_zp(nes); sta(nes); 3); break;
+		case 0x95: cycles = (addrm_zpx(nes); sta(nes); 4); break;
+		case 0x8D: cycles = (addrm_abs(nes); sta(nes); 4); break;
+		case 0x9D: cycles = (addrm_abx(nes); sta(nes); 5); break;
+		case 0x99: cycles = (addrm_aby(nes); sta(nes); 5); break;
+		case 0x81: cycles = (addrm_inx(nes); sta(nes); 6); break;
+		case 0x91: cycles = (addrm_iny(nes); sta(nes); 6); break;	
+		case 0x86: cycles = (addrm_zp(nes); stx(nes); 3); break;
+		case 0x96: cycles = (addrm_zpy(nes); stx(nes); 4); break;
+		case 0x8E: cycles = (addrm_abs(nes); stx(nes); 4); break;	
+		case 0x84: cycles = (addrm_zp(nes); sty(nes); 3); break;
+		case 0x94: cycles = (addrm_zpx(nes); sty(nes); 4); break;
+		case 0x8C: cycles = (addrm_abs(nes); sty(nes); 4); break;	
 		case 0xA9: cycles = (addrm_imm(nes); lda(nes); 2); break;
 		case 0xA5: cycles = (addrm_zp(nes); lda(nes); 3); break;
 		case 0xB5: cycles = (addrm_zpx(nes); lda(nes); 4); break;
