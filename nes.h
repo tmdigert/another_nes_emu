@@ -45,4 +45,7 @@ uint8_t addrm_iny(struct Nes*); // ex. LDA ($32), Y
 
 // instructions (https://wiki.nesdev.org/w/index.php/6502_instructions)
 void lda(struct Nes*);
+void sta(struct Nes*);
+void stx(struct Nes*);
+void sty(struct Nes*);
 // ..

@@ -16,12 +16,32 @@ void init_nes(struct Nes* nes) {
 void free_nes(struct Nes* nes) { }
 
 void step(struct Nes* nes) {
-	// fetch first opcode, result in Nes::micro_instr
+	// fetch first opcode
 	uint8_t op = fetch_op(nes);
 
 	//
 	uint8_t cycles = 0xFF; //
 	switch (op) {
+		// sta
+		case 0x85: cycles = (addrm_zp(nes); sta(nes); 3); break;
+		case 0x95: cycles = (addrm_zpx(nes); sta(nes); 4); break;
+		case 0x8D: cycles = (addrm_abs(nes); sta(nes); 4); break;
+		case 0x9D: cycles = (addrm_abx(nes); sta(nes); 5); break;
+		case 0x99: cycles = (addrm_aby(nes); sta(nes); 5); break;
+		case 0x81: cycles = (addrm_inx(nes); sta(nes); 6); break;
+		case 0x91: cycles = (addrm_iny(nes); sta(nes); 6); break;	
+
+		// stx
+		case 0x86: cycles = (addrm_zp(nes); stx(nes); 3); break;
+		case 0x96: cycles = (addrm_zpy(nes); stx(nes); 4); break;
+		case 0x8E: cycles = (addrm_abs(nes); stx(nes); 4); break;	
+
+		// sty
+		case 0x84: cycles = (addrm_zp(nes); sty(nes); 3); break;
+		case 0x94: cycles = (addrm_zpx(nes); sty(nes); 4); break;
+		case 0x8C: cycles = (addrm_abs(nes); sty(nes); 4); break;
+
+		// lda
 		case 0xA9: cycles = (addrm_imm(nes); lda(nes); 2); break;
 		case 0xA5: cycles = (addrm_zp(nes); lda(nes); 3); break;
 		case 0xB5: cycles = (addrm_zpx(nes); lda(nes); 4); break;
@@ -30,6 +50,8 @@ void step(struct Nes* nes) {
 		case 0xB9: cycles = (uint8_t oops = addrm_abx(nes); lda(nes); 4 + oops); break;
 		case 0xA1: cycles = (addrm_inx(nes); lda(nes); 6); break;
 		case 0xB1: cycles = (uint8_t oops = addrm_iny(nes); lda(nes); 5 + oops); break;
+
+
 		default:
 		// unhandled opcode error
 		break;
@@ -179,3 +201,14 @@ void lda(struct Nes* nes) {
 	nes->acc = cpu_read(nes, nes->micro_addr);
 }
 
+void sta(struct Nes* nes) {
+	cpu_write(nes, nes->micro_addr, nes->acc);
+}
+
+void stx(struct Nes* nes) {
+	cpu_write(nes, nes->micro_addr, nes->x);
+}
+
+void sty(struct Nes* nes) {
+	cpu_write(nes, nes->micro_addr, nes->y);
+}
