@@ -58,6 +58,11 @@ void step(struct Nes* nes) {
 	}
 }
 
+void set_flag(struct Nes* nes, uint8_t n, bool val) {
+	nes->status &= !(1 << n); // clear nth bit
+	nes->status |= val << n; // set nth bit to val
+}
+
 /*uint8_t cpu_read(struct Nes*, uint16_t addr) {
 	// range 0..0x1FFF -> internal ram
 	if (addr <= 0x1FFF) {
@@ -199,6 +204,8 @@ uint8_t addrm_aby(struct Nes* nes) {
 
 void lda(struct Nes* nes) {
 	nes->acc = cpu_read(nes, nes->micro_addr);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
 }
 
 void sta(struct Nes* nes) {

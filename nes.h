@@ -1,5 +1,14 @@
 #include <stdint.h>
 
+#define STATUS_FLAG_CARRY 		0
+#define STATUS_FLAG_ZERO 		1
+#define STATUS_FLAG_INTERRUPT 	2
+#define STATUS_FLAG_DECIMAL 	3
+#define STATUS_FLAG_BREAK 		4
+#define STATUS_FLAG_ALWAYS 		5
+#define STATUS_FLAG_OVERFLOW 	6
+#define STATUS_FLAG_NEGATIVE 	7
+
 struct Nes {
 	// CPU memory
 	uint8_t cpu_ram[0x800];
@@ -20,6 +29,9 @@ void free_nes(struct Nes*);
 
 // exec
 int step(struct Nes*);
+
+// misc
+void set_flag(struct Nes*, uint8_t, bool);
 
 // read/write
 // https://wiki.nesdev.org/w/index.php/CPU_memory_map
