@@ -179,3 +179,7 @@ void lda(struct Nes* nes) {
 	nes->acc = cpu_read(nes, nes->micro_addr);
 }
 
+void sta(struct Nes* nes){
+	nes->micro_addr = nes->acc;
+}
+
