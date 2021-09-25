@@ -205,3 +205,14 @@ void stx(struct Nes* nes) {
 void sty(struct Nes* nes) {
     cpu_write(nes, nes->micro_addr, nes->y);
 }
+
+void adc(struct Nes* nes) {
+	uint8_t old_acc = nes->acc;
+	uint8_t val = cpu_read(nes, nes->micro_addr);
+	nes->acc += val + (nes->status & (1 << STATUS_FLAG_CARRY) > 0);
+
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
+	set_flag(nes, STATUS_FLAG_OVERFLOW, (!old_acc & !val & nes->acc & 0x80) == 0x80 || (old_acc & val & !nes->acc & 0x80) == 0x80);
+	set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
+}
