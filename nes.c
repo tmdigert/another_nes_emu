@@ -209,6 +209,7 @@ uint8_t addrm_aby(struct Nes* nes) {
 
 void lda(struct Nes* nes) {
     nes->acc = cpu_read(nes, nes->micro_addr);
+    
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
 }
