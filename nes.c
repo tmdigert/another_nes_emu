@@ -231,7 +231,7 @@ void adc(struct Nes* nes) {
 	nes->acc += val + (nes->status & (1 << STATUS_FLAG_CARRY) > 0);
 
 	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-	set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->>acc >> 7);
+	set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->acc >> 7);
 	set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
 	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
