@@ -41,6 +41,163 @@ uint8_t step(struct Nes* nes) {
 		case 0x79: cycles = (oops = addrm_aby(nes), adc(nes), 4 + oops); break;
 		case 0x61: cycles = (addrm_inx(nes), adc(nes), 6); break;
 		case 0x71: cycles = (oops = addrm_iny(nes), adc(nes), 5 + oops); break;
+		    
+		
+        // and
+        case 0x29: cycles = (addrm_imm(nes), and(nes), 2); break;
+        case 0x25: cycles = (addrm_zp(nes), and(nes), 3); break;
+        case 0x35: cycles = (addrm_zpx(nes), and(nes), 4); break;
+        case 0x2D: cycles = (addrm_abs(nes), and(nes), 4); break;
+        case 0x3D: cycles = (oops = addrm_abx(nes), and(nes), 4 + oops); break;
+        case 0x39: cycles = (oops = addrm_aby(nes), and(nes), 4 + oops); break;
+        case 0x21: cycles = (addrm_inx(nes), and(nes), 6); break;
+        case 0x31: cycles = (oops = addrm_iny(nes), and(nes), 5 + oops); break;
+        
+        // asl
+        case 0x0A: cycles = (addrm_imp(nes), asl(nes), 2); break;
+        case 0x06: cycles = (addrm_zp(nes), asl(nes), 5); break;
+        case 0x16: cycles = (addrm_zpx(nes), asl(nes), 6); break;
+        case 0x0E: cycles = (addrm_abs(nes), asl(nes), 6); break;
+        case 0x1E: cycles = (addrm_abx(nes), asl(nes), 7); break;
+
+        // bit
+        case 0x24: cycles = (addrm_zp(nes), bit(nes), 3); break;
+        case 0x2C: cycles = (addrm_abs(nes), bit(nes), 4); break;
+
+        // branch TODO: finish branch instructions
+
+        // brk
+        case 0x00: cycles = (addrm_imp(nes), brk(nes), 7); break;
+
+        // cmp
+        case 0xC9: cycles = (addrm_imm(nes), cmp(nes), 2); break;
+        case 0xC5: cycles = (addrm_zp(nes), cmp(nes), 3); break;
+        case 0xD5: cycles = (addrm_zpx(nes), cmp(nes), 4); break;
+        case 0xCD: cycles = (addrm_abs(nes), cmp(nes), 4); break;
+        case 0xDD: cycles = (oops = addrm_abx(nes), cmp(nes), 4 + oops); break;
+        case 0xD9: cycles = (oops = addrm_aby(nes), cmp(nes), 4 + oops); break;
+        case 0xC1: cycles = (addrm_inx(nes), cmp(nes), 6); break;
+        case 0xD1: cycles = (oops = addrm_iny(nes), cmp(nes), 5 + oops); break;
+
+        // cpx
+        case 0xE0: cycles = (addrm_imm(nes), cpx(nes), 2); break;
+        case 0xE4: cycles = (addrm_zp(nes), cpx(nes), 3); break;
+        case 0xEC: cycles = (addrm_abs(nes), cpx(nes), 4); break;
+
+        // cpy
+        case 0xC0: cycles = (addrm_imm(nes), cpy(nes), 2); break;
+        case 0xC4: cycles = (addrm_zp(nes), cpy(nes), 3); break;
+        case 0xCC: cycles = (addrm_abs(nes), cpy(nes), 4); break;
+
+        // dec
+        case 0xC6: cycles = (addrm_zp(nes), dec(nes), 5); break;
+        case 0xD6: cycles = (addrm_zpx(nes), dec(nes), 6); break;
+        case 0xCE: cycles = (addrm_abs(nes), dec(nes), 6); break;
+        case 0xDE: cycles = (addrm_abx(nes), dec(nes),7); break;
+
+        // eor
+        case 0x49: cycles = (addrm_imm(nes), eor(nes), 2); break;
+        case 0x45: cycles = (addrm_zp(nes), eor(nes), 3); break;
+        case 0x55: cycles = (addrm_zpx(nes), eor(nes), 4); break;
+        case 0x4D: cycles = (addrm_abs(nes), eor(nes), 4); break;
+        case 0x5D: cycles = (oops = addrm_abx(nes), eor(nes), 4 + oops); break;
+        case 0x59: cycles = (oops = addrm_aby(nes), eor(nes), 4 + oops); break;
+        case 0x41: cycles = (addrm_inx(nes), eor(nes), 6); break;
+        case 0x51: cycles = (oops = addrm_iny(nes), eor(nes), 5 + oops); break;
+
+        // flag instructions
+        case 0x18: cycles = (addrm_imp(nes), clc(nes), 2); break; //clc
+        case 0x38: cycles = (addrm_imp(nes), sec(nes), 2); break; //sec
+        case 0x58: cycles = (addrm_imp(nes), cli(nes), 2); break; //cli
+        case 0x78: cycles = (addrm_imp(nes), sei(nes), 2); break; //sei
+        case 0xB8: cycles = (addrm_imp(nes), clv(nes), 2); break; //clv
+        case 0xD8: cycles = (addrm_imp(nes), cld(nes), 2); break; //cld
+        case 0xF8: cycles = (addrm_imp(nes), sed(nes), 2); break; //sed
+
+        // inc
+        case 0xE6: cycles = (addrm_zp(nes), inc(nes), 5); break;
+        case 0xF6: cycles = (addrm_zpx(nes), inc(nes), 6); break;
+        case 0xEE: cycles = (addrm_abs(nes), inc(nes), 6); break;
+        case 0xFE: cycles = (addrm_abx(nes), inc(nes),7); break;
+
+        // jmp
+        case 0x4C: cycles = (addrm_abs(nes), jmp(nes), 3); break;
+        case 0x6C: cycles = (addrm_ind(nes), jmp(nes), 5); break;
+
+        // jsr
+        case 0x20: cycles = (addrm_abs(nes), jsr(nes), 6); break;
+
+        // ldx
+        case 0xA2: cycles = (addrm_imm(nes), ldx(nes), 2); break;
+        case 0xA6: cycles = (addrm_zp(nes), ldx(nes), 3); break;
+        case 0xB6: cycles = (addrm_zpy(nes), ldx(nes), 4); break;
+        case 0xAE: cycles = (addrm_abs(nes), ldx(nes), 4); break;
+        case 0xBE: cycles = (oops = addrm_aby(nes), ldx(nes), 4 + oops); break;
+
+        // ldy
+        case 0xA0: cycles = (addrm_imm(nes), ldy(nes), 2); break;
+        case 0xA4: cycles = (addrm_zp(nes), ldy(nes), 3); break;
+        case 0xB4: cycles = (addrm_zpy(nes), ldy(nes), 4); break;
+        case 0xAC: cycles = (addrm_abs(nes), ldy(nes), 4); break;
+        case 0xBC: cycles = (oops = addrm_aby(nes), ldy(nes), 4 + oops); break;
+
+        // lsr
+        case 0xC6: cycles = (addrm_imp(nes), lsr(nes), 2); break;
+        case 0x46: cycles = (addrm_zp(nes), lsr(nes), 5); break;
+        case 0x56: cycles = (addrm_zpx(nes), lsr(nes), 6); break;
+        case 0x4E: cycles = (addrm_abs(nes), lsr(nes), 6); break;
+        case 0x5E: cycles = (addrm_abx(nes), lsr(nes),7); break;
+
+        // nop
+        case 0xEA: cycles = (addrm_imp(nes), nop(nes), 2); break;
+
+        // ora
+        case 0x09: cycles = (addrm_imm(nes), ora(nes), 2); break;
+        case 0x05: cycles = (addrm_zp(nes), ora(nes), 3); break;
+        case 0x15: cycles = (addrm_zpx(nes), ora(nes), 4); break;
+        case 0x0D: cycles = (addrm_abs(nes), ora(nes), 4); break;
+        case 0x1D: cycles = (oops = addrm_abx(nes), ora(nes), 4 + oops); break;
+        case 0x19: cycles = (oops = addrm_aby(nes), ora(nes), 4 + oops); break;
+        case 0x01: cycles = (addrm_inx(nes), ora(nes), 6); break;
+        case 0x11: cycles = (oops = addrm_iny(nes), ora(nes), 5 + oops); break;
+
+        // register instructions
+        case 0xAA: cycles = (addrm_imp(nes), tax(nes), 2); break; //tax
+        case 0x8A: cycles = (addrm_imp(nes), txa(nes), 2); break; //txa
+        case 0xCA: cycles = (addrm_imp(nes), dex(nes), 2); break; //dex
+        case 0xE8: cycles = (addrm_imp(nes), inx(nes), 2); break; //inx
+        case 0xA8: cycles = (addrm_imp(nes), tay(nes), 2); break; //tay
+        case 0x98: cycles = (addrm_imp(nes), tya(nes), 2); break; //tya
+        case 0x88: cycles = (addrm_imp(nes), dey(nes), 2); break; //dey
+        case 0xC8: cycles = (addrm_imp(nes), iny(nes), 2); break; //iny
+
+        // rol
+        case 0x2A: cycles = (addrm_imp(nes), rol(nes), 2); break;
+        case 0x26: cycles = (addrm_zp(nes), rol(nes), 5); break;
+        case 0x36: cycles = (addrm_zpx(nes), rol(nes), 6); break;
+        case 0x2E: cycles = (addrm_abs(nes), rol(nes), 6); break;
+        case 0x3E: cycles = (addrm_abx(nes), rol(nes),7); break;
+
+        // ror
+        case 0x6A: cycles = (addrm_imp(nes), ror(nes), 2); break;
+        case 0x66: cycles = (addrm_zp(nes), ror(nes), 5); break;
+        case 0x76: cycles = (addrm_zpx(nes), ror(nes), 6); break;
+        case 0x6E: cycles = (addrm_abs(nes), ror(nes), 6); break;
+        case 0x7E: cycles = (addrm_abx(nes), ror(nes),7); break;
+
+        // rti
+        case 0x40: cycles = (addrm_imp(nes), rti(nes), 6); break;
+
+        // rts
+        case 0x60: cycles = (addrm_imp(nes), rts(nes), 6); break;
+        
+        //stack instructions
+        case 0x9A: cycles = (addrm_imp(nes), txs(nes), 2); break; //txs
+        case 0xBA: cycles = (addrm_imp(nes), tsx(nes), 2); break; //tsx
+        case 0x48: cycles = (addrm_imp(nes), pha(nes), 3); break; //pha
+        case 0x68: cycles = (addrm_imp(nes), pla(nes), 4); break; //pla
+        case 0x08: cycles = (addrm_imp(nes), php(nes), 3); break; //php
+        case 0x28: cycles = (addrm_imp(nes), plp(nes), 4); break; //plp
 
         // sta
         case 0x85: cycles = (addrm_zp(nes), sta(nes), 3); break;
