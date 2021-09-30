@@ -404,3 +404,58 @@ void sbc(struct Nes* nes) {
 	set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
 	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
+
+void txs(struct Nes* nes){
+	//cpu_write(nes, nes->sp, nes->x);
+	nes->x = nes->sp;
+	
+}
+
+void tsx (struct Nes* nes){
+	//cpu_write(nes, nes->x, nes->sp);
+	nes->sp = nes->x;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->sp >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->sp == 0);
+}
+
+void and (struct Nes* nes){
+	nes->a = nes->a && cpu_read(nes, nes->micro_addr);
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
+}
+
+void ora (struct Nes* nes){
+	nes->a = nes->a || cpu_read(nes, nes->micro_addr);
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
+}
+
+void eor (struct Nes* nes){
+	nes->a = nes->a ^ cpu_read(nes, nes->micro_addr);
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
+}
+
+void tax (struct Nes* nes){
+	nes->x = nes->a;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->x >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->x == 0);
+}
+
+void txa (struct Nes* nes){
+	nes->a = nes->x;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
+}
+
+void tay (struct Nes* nes){
+	nes->y = nes->a;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->y >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->y == 0);
+}
+
+void tya (struct Nes* nes){
+	nes->a = nes->y;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->y >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->y == 0);
+}
