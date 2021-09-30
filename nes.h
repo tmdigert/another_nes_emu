@@ -60,4 +60,6 @@ void lda(struct Nes*);
 void sta(struct Nes*);
 void stx(struct Nes*);
 void sty(struct Nes*);
+void adc(struct Nes*);
+void sbc(struct Nes*);
 // ..
