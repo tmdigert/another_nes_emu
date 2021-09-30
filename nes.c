@@ -406,26 +406,25 @@ void sbc(struct Nes* nes) {
 }
 
 void txs(struct Nes* nes){
-	//cpu_write(nes, nes->sp, nes->x);
-	nes->x = nes->sp;
+	nes->sp = nes->x;
+	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->sp >> 7);
+	set_flag(nes, STATUS_FLAG_ZERO, nes->sp == 0);
 	
 }
 
 void tsx (struct Nes* nes){
-	//cpu_write(nes, nes->x, nes->sp);
-	nes->sp = nes->x;
-	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->sp >> 7);
-	set_flag(nes, STATUS_FLAG_ZERO, nes->sp == 0);
+	nes->x = nes->sp;
+	
 }
 
 void and (struct Nes* nes){
-	nes->a = nes->a && cpu_read(nes, nes->micro_addr);
+	nes->a = nes->a & cpu_read(nes, nes->micro_addr);
 	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
 	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
 }
 
 void ora (struct Nes* nes){
-	nes->a = nes->a || cpu_read(nes, nes->micro_addr);
+	nes->a = nes->a | cpu_read(nes, nes->micro_addr);
 	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->a >> 7);
 	set_flag(nes, STATUS_FLAG_ZERO, nes->a == 0);
 }
