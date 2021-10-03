@@ -1,1 +1,1 @@
-gcc main.c nes.c -o emu.exe
+gcc main.c nes.c opcode.c addressing.c -o emu.exe

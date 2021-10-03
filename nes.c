@@ -1,8 +1,6 @@
 #include "nes.h"
 
-uint16_t make_u16(uint8_t hi, uint8_t lo) {
-    return ((uint16_t)hi << 8) | (uint16_t)lo;
-}
+
 
 void init_nes(struct Nes* nes) {
     // https://wiki.nesdev.org/w/index.php/CPU_power_up_state
@@ -17,7 +15,8 @@ void free_nes(struct Nes* nes) { }
 
 uint8_t step(struct Nes* nes) {
     // fetch first opcode
-    uint8_t op = fetch_op(nes);
+    uint8_t op = cpu_read(nes, nes->pc);
+    nes->pc += 1;
 
     //
     uint8_t cycles = 0xFF; //
@@ -53,20 +52,20 @@ uint8_t step(struct Nes* nes) {
 
         // bit
         case 0x24: cycles = (addrm_zp(nes), bit(nes), 3); break;
-        case 0x2C: cycles = (addrm_abs(nes), but(nes), 4); break;
+        case 0x2C: cycles = (addrm_abs(nes), bit(nes), 4); break;
 
         // branch
-        case 0x10: cycles = (oops = addrm_rel(nes), branch = bpl(nes), 2 + oops + branch); break;
-        case 0x30: cycles = (oops = addrm_rel(nes), branch = bmi(nes), 2 + oops + branch); break;
-        case 0x50: cycles = (oops = addrm_rel(nes), branch = bvc(nes), 2 + oops + branch); break;
-        case 0x70: cycles = (oops = addrm_rel(nes), branch = bvs(nes), 2 + oops + branch); break;
-        case 0x90: cycles = (oops = addrm_rel(nes), branch = bcc(nes), 2 + oops + branch); break;
-        case 0xB0: cycles = (oops = addrm_rel(nes), branch = bcs(nes), 2 + oops + branch); break;
-        case 0xD0: cycles = (oops = addrm_rel(nes), branch = bne(nes), 2 + oops + branch); break;
-        case 0xF0: cycles = (oops = addrm_rel(nes), branch = beq(nes), 2 + oops + branch); break;
+        case 0x10: cycles = (addrm_rel(nes), branch = bpl(nes), 2 + branch); break;
+        case 0x30: cycles = (addrm_rel(nes), branch = bmi(nes), 2 + branch); break;
+        case 0x50: cycles = (addrm_rel(nes), branch = bvc(nes), 2 + branch); break;
+        case 0x70: cycles = (addrm_rel(nes), branch = bvs(nes), 2 + branch); break;
+        case 0x90: cycles = (addrm_rel(nes), branch = bcc(nes), 2 + branch); break;
+        case 0xB0: cycles = (addrm_rel(nes), branch = bcs(nes), 2 + branch); break;
+        case 0xD0: cycles = (addrm_rel(nes), branch = bne(nes), 2 + branch); break;
+        case 0xF0: cycles = (addrm_rel(nes), branch = beq(nes), 2 + branch); break;
 
         // brk
-        case 0x00: cycles = (brk_imp(nes), 7); break;
+        case 0x00: cycles = (brk(nes), 7); break;
 
         // cmp
         case 0xC9: cycles = (addrm_imm(nes), cmp(nes), 2); break;
@@ -105,13 +104,13 @@ uint8_t step(struct Nes* nes) {
         case 0x51: cycles = (oops = addrm_iny(nes), eor(nes), 5 + oops); break;
 
         // flag instructions
-        case 0x18: cycles = (addrm_imp(nes), clc(nes), 2); break; //clc
-        case 0x38: cycles = (addrm_imp(nes), sec(nes), 2); break; //sec
-        case 0x58: cycles = (addrm_imp(nes), cli(nes), 2); break; //cli
-        case 0x78: cycles = (addrm_imp(nes), sei(nes), 2); break; //sei
-        case 0xB8: cycles = (addrm_imp(nes), clv(nes), 2); break; //clv
-        case 0xD8: cycles = (addrm_imp(nes), cld(nes), 2); break; //cld
-        case 0xF8: cycles = (addrm_imp(nes), sed(nes), 2); break; //sed
+        case 0x18: cycles = (clc(nes), 2); break; //clc
+        case 0x38: cycles = (sec(nes), 2); break; //sec
+        case 0x58: cycles = (cli(nes), 2); break; //cli
+        case 0x78: cycles = (sei(nes), 2); break; //sei
+        case 0xB8: cycles = (clv(nes), 2); break; //clv
+        case 0xD8: cycles = (cld(nes), 2); break; //cld
+        case 0xF8: cycles = (sed(nes), 2); break; //sed
 
         // inc
         case 0xE6: cycles = (addrm_zp(nes), inc(nes), 5); break;
@@ -151,14 +150,14 @@ uint8_t step(struct Nes* nes) {
         case 0xBC: cycles = (oops = addrm_aby(nes), ldy(nes), 4 + oops); break;
 
         // lsr
-        case 0xC6: cycles = (addrm_imp(nes), lsr(nes), 2); break;
+        case 0x4A: cycles = (lsr_imp(nes), 2); break;
         case 0x46: cycles = (addrm_zp(nes), lsr(nes), 5); break;
         case 0x56: cycles = (addrm_zpx(nes), lsr(nes), 6); break;
         case 0x4E: cycles = (addrm_abs(nes), lsr(nes), 6); break;
         case 0x5E: cycles = (addrm_abx(nes), lsr(nes),7); break;
 
         // nop
-        case 0xEA: cycles = (addrm_imp(nes), nop(nes), 2); break;
+        case 0xEA: cycles = (nop(nes), 2); break;
 
         // ora
         case 0x09: cycles = (addrm_imm(nes), ora(nes), 2); break;
@@ -171,34 +170,34 @@ uint8_t step(struct Nes* nes) {
         case 0x11: cycles = (oops = addrm_iny(nes), ora(nes), 5 + oops); break;
 
         // register instructions
-        case 0xAA: cycles = (addrm_imp(nes), tax(nes), 2); break; //tax
-        case 0x8A: cycles = (addrm_imp(nes), txa(nes), 2); break; //txa
-        case 0xCA: cycles = (addrm_imp(nes), dex(nes), 2); break; //dex
-        case 0xE8: cycles = (addrm_imp(nes), inx(nes), 2); break; //inx
-        case 0xA8: cycles = (addrm_imp(nes), tay(nes), 2); break; //tay
-        case 0x98: cycles = (addrm_imp(nes), tya(nes), 2); break; //tya
-        case 0x88: cycles = (addrm_imp(nes), dey(nes), 2); break; //dey
-        case 0xC8: cycles = (addrm_imp(nes), iny(nes), 2); break; //iny
+        case 0xAA: cycles = (tax(nes), 2); break; //tax
+        case 0x8A: cycles = (txa(nes), 2); break; //txa
+        case 0xCA: cycles = (dex(nes), 2); break; //dex
+        case 0xE8: cycles = (inx(nes), 2); break; //inx
+        case 0xA8: cycles = (tay(nes), 2); break; //tay
+        case 0x98: cycles = (tya(nes), 2); break; //tya
+        case 0x88: cycles = (dey(nes), 2); break; //dey
+        case 0xC8: cycles = (iny(nes), 2); break; //iny
 
         // rol
-        case 0x2A: cycles = (addrm_imp(nes), rol(nes), 2); break;
+        case 0x2A: cycles = (rol_imp(nes), 2); break;
         case 0x26: cycles = (addrm_zp(nes), rol(nes), 5); break;
         case 0x36: cycles = (addrm_zpx(nes), rol(nes), 6); break;
         case 0x2E: cycles = (addrm_abs(nes), rol(nes), 6); break;
         case 0x3E: cycles = (addrm_abx(nes), rol(nes),7); break;
 
         // ror
-        case 0x6A: cycles = (addrm_imp(nes), ror(nes), 2); break;
+        case 0x6A: cycles = (ror_imp(nes), 2); break;
         case 0x66: cycles = (addrm_zp(nes), ror(nes), 5); break;
         case 0x76: cycles = (addrm_zpx(nes), ror(nes), 6); break;
         case 0x6E: cycles = (addrm_abs(nes), ror(nes), 6); break;
         case 0x7E: cycles = (addrm_abx(nes), ror(nes),7); break;
 
         // rti
-        case 0x40: cycles = (addrm_imp(nes), rti(nes), 6); break;
+        case 0x40: cycles = (rti(nes), 6); break;
 
         // rts
-        case 0x60: cycles = (addrm_imp(nes), rts(nes), 6); break;
+        case 0x60: cycles = (rts(nes), 6); break;
 
         // sbc
         case 0xE9: cycles = (addrm_imm(nes), sbc(nes), 2); break;
@@ -220,12 +219,12 @@ uint8_t step(struct Nes* nes) {
         case 0x91: cycles = (addrm_iny(nes), sta(nes), 6); break; 
 
         //stack instructions
-        case 0x9A: cycles = (addrm_imp(nes), txs(nes), 2); break; //txs
-        case 0xBA: cycles = (addrm_imp(nes), tsx(nes), 2); break; //tsx
-        case 0x48: cycles = (addrm_imp(nes), pha(nes), 3); break; //pha
-        case 0x68: cycles = (addrm_imp(nes), pla(nes), 4); break; //pla
-        case 0x08: cycles = (addrm_imp(nes), php(nes), 3); break; //php
-        case 0x28: cycles = (addrm_imp(nes), plp(nes), 4); break; //plp
+        case 0x9A: cycles = (txs(nes), 2); break; //txs
+        case 0xBA: cycles = (tsx(nes), 2); break; //tsx
+        case 0x48: cycles = (pha(nes), 3); break; //pha
+        case 0x68: cycles = (pla(nes), 4); break; //pla
+        case 0x08: cycles = (php(nes), 3); break; //php
+        case 0x28: cycles = (plp(nes), 4); break; //plp
 
         // stx
         case 0x86: cycles = (addrm_zp(nes), stx(nes), 3); break;
@@ -250,164 +249,13 @@ void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
     nes->status |= val << n; // set nth bit to val
 }
 
+uint8_t get_flag(struct Nes* nes, uint8_t n) {
+    return (nes->status >> n) & 0x01;
+}
+
 uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
     return 0;
 }
 
 void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
-}
-
-uint8_t fetch_op(struct Nes* nes) {
-    uint8_t op = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    return op;
-}
-
-void addrm_imp(struct Nes* nes) {
-    // this one kind of sucks
-}
-
-void addrm_imm(struct Nes* nes) {
-    // store internal address as operand address
-    nes->micro_addr = nes->pc;
-    nes->pc += 1;
-}
-
-void addrm_zp(struct Nes* nes) {
-    // read operand (zp address), store
-    nes->micro_addr = (uint16_t)cpu_read(nes, nes->pc);
-    nes->pc += 1;
-}
-
-void addrm_zpx(struct Nes* nes) {
-    // read operand (zp address)
-    uint8_t addr = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // inc zp address (by y)
-    addr += nes->x;
-    // store internal address
-    nes->micro_addr = (uint16_t)addr;
-}
-
-void addrm_zpy(struct Nes* nes) {
-    // read operand (zp address)
-    uint8_t addr = (uint16_t)cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // inc zp address (by y)
-    addr += nes->y;
-    // store internal address
-    nes->micro_addr = (uint16_t)addr;
-}
-
-void addrm_inx(struct Nes* nes) {
-    // read operand (zp address)
-    uint8_t addr = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // inc zp address (by x)
-    addr += nes->x;
-    // read zp address (absolute address, low and high byte_)
-    uint8_t lo = cpu_read(nes, addr);
-    uint8_t hi = cpu_read(nes, addr + 1);
-    // store internal address
-    nes->micro_addr = make_u16(hi, lo);
-}
-
-uint8_t addrm_iny(struct Nes* nes) {
-    // read operand (zp address) 
-    uint8_t addr = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // read zp address (absolute address, low and high byte)
-    uint8_t lo = cpu_read(nes, addr);
-    uint8_t hi = cpu_read(nes, addr + 1);
-    // inc absolute address (by y), record carry
-    uint8_t carry = lo + nes->x < lo;
-    lo += nes->y;
-    hi += carry;
-    // store internal address
-    nes->micro_addr = make_u16(hi, lo);
-    return carry;
-}
-
-void addrm_abs(struct Nes* nes) {
-    // read operand (absolute address low byte)
-    uint8_t lo = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // read operand (absolute address high byte)
-    uint8_t hi = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // store internal address
-    nes->micro_addr = make_u16(hi, lo);
-}
-
-uint8_t addrm_abx(struct Nes* nes) {
-    // read operand (absolute address low byte)
-    uint8_t lo = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // read operand (absolute address high byte)
-    uint8_t hi = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // inc absolute address (by x), record carry
-    uint8_t carry = lo + nes->x < lo;
-    lo += nes->x;
-    hi += carry;
-    // store internal address
-    nes->micro_addr = make_u16(hi, lo);
-    return carry;
-}
-
-uint8_t addrm_aby(struct Nes* nes) {
-    // read operand (absolute address low byte)
-    uint8_t lo = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // read operand (absolute address high byte)
-    uint8_t hi = cpu_read(nes, nes->pc);
-    nes->pc += 1;
-    // inc absolute address (by y), record carry
-    uint8_t carry = lo + nes->y < lo;
-    lo += nes->y;
-    hi += carry;
-    // store internal address
-    nes->micro_addr = make_u16(hi, lo);
-    return carry;
-}
-
-void lda(struct Nes* nes) {
-    nes->acc = cpu_read(nes, nes->micro_addr);
-    
-    set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
-    set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-}
-
-void sta(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->acc);
-}
-
-void stx(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->x);
-}
-
-void sty(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->y);
-}
-
-void adc(struct Nes* nes) {
-	uint8_t old_acc = nes->acc;
-	uint8_t val = cpu_read(nes, nes->micro_addr);
-	nes->acc += val + (nes->status & (1 << STATUS_FLAG_CARRY) > 0);
-
-	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-	set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->acc >> 7);
-	set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
-	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
-}
-
-void sbc(struct Nes* nes) {
-	uint8_t old_acc = nes->acc;
-	uint8_t val = ~cpu_read(nes, nes->micro_addr);
-	nes->acc += val + (nes->status & 1 << STATUS_FLAG_CARRY > 0);
-
-	set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-	set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->acc >> 7);
-	set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
-	set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
