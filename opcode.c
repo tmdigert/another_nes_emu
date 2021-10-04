@@ -20,7 +20,7 @@ void and(struct Nes* nes) {
 
 void asl(struct Nes* nes) {
     uint8_t val = cpu_read(nes, nes->micro_addr);
-    uint8_t bit7 = (val & 0x80) >> 7;
+    uint8_t bit7 = val >> 7;
     val <<= 1;
     cpu_write(nes, nes->micro_addr, val);
 
@@ -30,7 +30,7 @@ void asl(struct Nes* nes) {
 }
 
 void asl_imp(struct Nes* nes) {
-    uint8_t bit7 = (nes->acc & 0x80) >> 7;
+    uint8_t bit7 = nes->acc >> 7;
     nes->acc <<= 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
@@ -39,13 +39,19 @@ void asl_imp(struct Nes* nes) {
 }
 
 void bit(struct Nes* nes) {
-    // TODO: implement
+    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t bit7 = val >> 7;
+    uint8_t bit6 = (val >> 6) & 0x01;
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, bit7);
+    set_flag(nes, STATUS_FLAG_OVERFLOW, bit6);
+    set_flag(nes, STATUS_FLAG_ZERO, (val & nes->acc) == 0);
 }
 
 uint8_t bpl(struct Nes* nes) {
     uint8_t neg_flag = get_flag(nes, STATUS_FLAG_NEGATIVE);
     if (!neg_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -55,7 +61,7 @@ uint8_t bpl(struct Nes* nes) {
 uint8_t bmi(struct Nes* nes) {
     uint8_t neg_flag = get_flag(nes, STATUS_FLAG_NEGATIVE);
     if (neg_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -65,7 +71,7 @@ uint8_t bmi(struct Nes* nes) {
 uint8_t bvc(struct Nes* nes) {
     uint8_t overflow_flag = get_flag(nes, STATUS_FLAG_OVERFLOW);
     if (!overflow_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -75,7 +81,7 @@ uint8_t bvc(struct Nes* nes) {
 uint8_t bvs(struct Nes* nes) {
     uint8_t overflow_flag = get_flag(nes, STATUS_FLAG_OVERFLOW);
     if (overflow_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -85,7 +91,7 @@ uint8_t bvs(struct Nes* nes) {
 uint8_t bcc(struct Nes* nes) {
     uint8_t carry_flag = get_flag(nes, STATUS_FLAG_CARRY);
     if (!carry_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -95,7 +101,7 @@ uint8_t bcc(struct Nes* nes) {
 uint8_t bcs(struct Nes* nes) {
     uint8_t carry_flag = get_flag(nes, STATUS_FLAG_CARRY);
     if (carry_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -105,7 +111,7 @@ uint8_t bcs(struct Nes* nes) {
 uint8_t bne(struct Nes* nes) {
     uint8_t zero_flag = get_flag(nes, STATUS_FLAG_ZERO);
     if (!zero_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -115,7 +121,7 @@ uint8_t bne(struct Nes* nes) {
 uint8_t beq(struct Nes* nes) {
     uint8_t zero_flag = get_flag(nes, STATUS_FLAG_ZERO);
     if (zero_flag) {
-        uint8_t cross = nes->pc ^ nes->micro_addr > 0xFF;
+        uint8_t cross = (nes->pc ^ nes->micro_addr) > 0xFF;
         nes->pc = nes->micro_addr;
         return 1 + cross;
     }
@@ -192,11 +198,15 @@ void inc(struct Nes* nes) {
 }
 
 void jmp(struct Nes* nes) {
-    // TODO implement
+    nes->pc = nes->micro_addr;
 }
 
 void jsr(struct Nes* nes) {
-    // TODO implement
+    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(nes->pc >> 8));
+    nes->sp -= 1;
+    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(nes->pc));
+    nes->sp -= 1;
+    nes->pc = nes->micro_addr;
 }
 
 void lda(struct Nes* nes) {
@@ -309,7 +319,7 @@ void iny(struct Nes* nes) {
 
 void rol(struct Nes* nes) {
     uint8_t val = cpu_read(nes, nes->micro_addr);
-    uint8_t bit7 = (val & 0x80) >> 7;
+    uint8_t bit7 = val >> 7;
     val <<= 1;
     val |= get_flag(nes, STATUS_FLAG_CARRY); // bit0 = carry
     cpu_write(nes, nes->micro_addr, val);
@@ -320,7 +330,7 @@ void rol(struct Nes* nes) {
 }
 
 void rol_imp(struct Nes* nes) {
-    uint8_t bit7 = (nes->acc & 0x80) >> 7;
+    uint8_t bit7 = nes->acc >> 7;
     nes->acc <<= 1;
     nes->acc |= get_flag(nes, STATUS_FLAG_CARRY); // bit0 = carry
 
@@ -356,7 +366,11 @@ void rti(struct Nes* nes) {
 }
 
 void rts(struct Nes* nes) {
-    // TODO: implement
+    nes->sp += 1;
+    uint8_t lo = cpu_read(nes, 0x0100 | nes->sp);
+    nes->sp += 1;
+    uint8_t hi = cpu_read(nes, 0x0100 | nes->sp);
+    nes->pc = make_u16(hi, lo);
 }
 
 void sbc(struct Nes* nes) {
@@ -383,19 +397,23 @@ void tsx(struct Nes* nes) {
 }
 
 void pha(struct Nes* nes) {
-    // TODO: implement
+    cpu_write(nes, 0x0100 | nes->sp, nes->acc);
+    nes->sp -= 1;
 }
 
 void pla(struct Nes* nes) {
-    // TODO: implement
+    nes->sp += 1;
+    nes->acc = cpu_read(nes, 0x0100 | nes->sp);
 }
 
 void php(struct Nes* nes) {
-    // TODO: implement
+    cpu_write(nes, 0x0100 | nes->sp, nes->status);
+    nes->sp -= 1;
 }
 
 void plp(struct Nes* nes) {
-    // TODO: implement
+    nes->sp += 1;
+    nes->status = cpu_read(nes, 0x0100 | nes->sp);
 }
 
 void stx(struct Nes* nes) {

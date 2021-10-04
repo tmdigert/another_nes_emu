@@ -1,9 +1,5 @@
 #include "nes.h"
 
-uint16_t make_u16(uint8_t hi, uint8_t lo) {
-    return ((uint16_t)hi << 8) | (uint16_t)lo;
-}
-
 void addrm_imp(struct Nes* nes) {
     // this one kind of sucks
 }

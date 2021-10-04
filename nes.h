@@ -10,6 +10,9 @@
 #define STATUS_FLAG_NEGATIVE    7
 
 struct Nes {
+    // Cartridge
+    uint8_t* cartridge;
+
     // CPU memory
     uint8_t cpu_ram[0x800];
 
@@ -23,8 +26,10 @@ struct Nes {
     uint16_t micro_addr;
 };
 
+uint16_t make_u16(uint8_t hi, uint8_t lo);
+
 // init/free
-void init_nes(struct Nes*);
+void init_nes(struct Nes*, uint8_t* rom);
 void free_nes(struct Nes*);
 
 // exec

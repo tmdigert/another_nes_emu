@@ -1,14 +1,20 @@
 #include "nes.h"
 
+uint16_t make_u16(uint8_t hi, uint8_t lo) {
+    return ((uint16_t)hi << 8) | (uint16_t)lo;
+}
 
+void init_nes(struct Nes* nes, uint8_t* cartridge) {
+    // cartridge
+    nes->cartridge = cartridge;
 
-void init_nes(struct Nes* nes) {
     // https://wiki.nesdev.org/w/index.php/CPU_power_up_state
     nes->acc = 0;
     nes->x = 0;
     nes->y = 0;
+    nes->pc = 0;
     nes->sp = 0xFD;
-    nes->status = 0x34;     
+    nes->status = 0x24;
 }
 
 void free_nes(struct Nes* nes) { }
@@ -254,8 +260,28 @@ uint8_t get_flag(struct Nes* nes, uint8_t n) {
 }
 
 uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
-    return 0;
+    if (addr <= 0x1FFF) {
+        addr &= 0x07FF;
+       return nes->cpu_ram[addr];
+    }
+    if (addr <= 0x401F) {
+        // unimplemented range
+        return -1;
+    }
+    // assume NROM
+    //printf("cartridge space: %04X\n", (addr - 0x8000) & 0x3FFF);
+    return nes->cartridge[(addr - 0x8000) & 0x3FFF];
 }
 
 void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
+    if (addr <= 0x1FFF) {
+        nes->cpu_ram[addr &= 0x07FF] = byte;
+        return;
+    }
+    if (addr <= 0x401F) {
+        // unimplemented range
+        return;
+    }
+    // assume NROM
+    return;
 }
