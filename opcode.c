@@ -1,12 +1,12 @@
 #include "nes.h"
 
 void adc(struct Nes* nes) {
-    uint8_t old_acc = nes->acc;
     uint8_t val = cpu_read(nes, nes->micro_addr);
-    nes->acc += val + (nes->status & (1 << STATUS_FLAG_CARRY) > 0);
+    uint8_t old_acc = nes->acc;
+    nes->acc += val + get_flag(nes, STATUS_FLAG_CARRY);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-    set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->acc >> 7);
+    set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc & nes->acc & val >= 0x80 || ~old_acc & ~nes->acc & ~val >= 0x80);
     set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
@@ -132,16 +132,33 @@ void brk(struct Nes* nes) {
     // TODO: implement
 }
 
+#include <stdio.h>
+
 void cmp(struct Nes* nes) {
-    // TODO: implement
+    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t dummy_acc = nes->acc + ~val + 1;
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_acc >> 7);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_acc >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_ZERO, dummy_acc == 0);
 }
 
 void cpx(struct Nes* nes) {
-    // TODO: implement
+    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t dummy_x = nes->x + ~val + 1;
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_x >> 7);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_x >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_ZERO, dummy_x == 0);
 }
 
 void cpy(struct Nes* nes) {
-    // TODO: implement
+    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t dummy_y = nes->y + ~val + 1;
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_y >> 7);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_y >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_ZERO, dummy_y == 0);
 }
 
 void dec(struct Nes* nes) {
@@ -404,16 +421,19 @@ void pha(struct Nes* nes) {
 void pla(struct Nes* nes) {
     nes->sp += 1;
     nes->acc = cpu_read(nes, 0x0100 | nes->sp);
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
+    set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
 void php(struct Nes* nes) {
-    cpu_write(nes, 0x0100 | nes->sp, nes->status);
+    cpu_write(nes, 0x0100 | nes->sp, nes->status | 0b00110000);
     nes->sp -= 1;
 }
 
 void plp(struct Nes* nes) {
     nes->sp += 1;
-    nes->status = cpu_read(nes, 0x0100 | nes->sp);
+    nes->status = cpu_read(nes, 0x0100 | nes->sp) & 0b11101111 | 0b00100000;
 }
 
 void stx(struct Nes* nes) {

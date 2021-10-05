@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     // step the nes 7 times (complete first brk)
     int cyc = 7;
-    for (int instr = 1; instr <= 100; instr++) {
+    for (int instr = 1; instr <= 219; instr++) {
         printf("%6i PC:%04X A:%02X X:%02X Y:%02X P:%02X, SP:%02X CYC:%i\n", instr, nes.pc, nes.acc, nes.x, nes.y, nes.status, nes.sp, cyc);
         fflush(stdout);
         cyc += step(&nes);
