@@ -5,9 +5,10 @@ void adc(struct Nes* nes) {
     uint8_t old_acc = nes->acc;
     nes->acc += val + get_flag(nes, STATUS_FLAG_CARRY);
 
+    uint8_t overflow = (val ^ old_acc) < 0x80 && (val ^ nes->acc) >> 7;
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-    set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc & nes->acc & val >= 0x80 || ~old_acc & ~nes->acc & ~val >= 0x80);
-    set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
+    set_flag(nes, STATUS_FLAG_OVERFLOW, overflow);
+    set_flag(nes, STATUS_FLAG_CARRY, nes->acc <= old_acc);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
@@ -132,14 +133,14 @@ void brk(struct Nes* nes) {
     // TODO: implement
 }
 
-#include <stdio.h>
+// carry unset
 
 void cmp(struct Nes* nes) {
     uint8_t val = cpu_read(nes, nes->micro_addr);
     uint8_t dummy_acc = nes->acc + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_acc >> 7);
-    set_flag(nes, STATUS_FLAG_CARRY, dummy_acc >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_acc <= nes->acc);
     set_flag(nes, STATUS_FLAG_ZERO, dummy_acc == 0);
 }
 
@@ -148,7 +149,7 @@ void cpx(struct Nes* nes) {
     uint8_t dummy_x = nes->x + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_x >> 7);
-    set_flag(nes, STATUS_FLAG_CARRY, dummy_x >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_x <= nes->x);
     set_flag(nes, STATUS_FLAG_ZERO, dummy_x == 0);
 }
 
@@ -157,7 +158,7 @@ void cpy(struct Nes* nes) {
     uint8_t dummy_y = nes->y + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_y >> 7);
-    set_flag(nes, STATUS_FLAG_CARRY, dummy_y >= ~val + 1);
+    set_flag(nes, STATUS_FLAG_CARRY, dummy_y <= nes->y);
     set_flag(nes, STATUS_FLAG_ZERO, dummy_y == 0);
 }
 
@@ -218,10 +219,13 @@ void jmp(struct Nes* nes) {
     nes->pc = nes->micro_addr;
 }
 
+#include <stdio.h>
+
 void jsr(struct Nes* nes) {
-    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(nes->pc >> 8));
+    uint16_t addr = nes->pc - 1; //
+    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(addr >> 8));
     nes->sp -= 1;
-    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(nes->pc));
+    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
     nes->sp -= 1;
     nes->pc = nes->micro_addr;
 }
@@ -378,11 +382,11 @@ void ror_imp(struct Nes* nes) {
     set_flag(nes, STATUS_FLAG_CARRY, bit0);
 }
 
+// is:          10000111
+// should be:   10100111
 void rti(struct Nes* nes) {
-    // TODO: implement
-}
-
-void rts(struct Nes* nes) {
+    nes->sp += 1;
+    nes->status = cpu_read(nes, 0x0100 | nes->sp) | 0b00100000;
     nes->sp += 1;
     uint8_t lo = cpu_read(nes, 0x0100 | nes->sp);
     nes->sp += 1;
@@ -390,14 +394,23 @@ void rts(struct Nes* nes) {
     nes->pc = make_u16(hi, lo);
 }
 
+void rts(struct Nes* nes) {
+    nes->sp += 1;
+    uint8_t lo = cpu_read(nes, 0x0100 | nes->sp);
+    nes->sp += 1;
+    uint8_t hi = cpu_read(nes, 0x0100 | nes->sp);
+    nes->pc = make_u16(hi, lo) + 1; // +1 ?
+}
+
 void sbc(struct Nes* nes) {
     uint8_t old_acc = nes->acc;
     uint8_t val = ~cpu_read(nes, nes->micro_addr);
-    nes->acc += val + (nes->status & 1 << STATUS_FLAG_CARRY > 0);
+    nes->acc += val + get_flag(nes, STATUS_FLAG_CARRY);
 
+    uint8_t overflow = (val ^ old_acc) < 0x80 && (val ^ nes->acc) >> 7;
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
-    set_flag(nes, STATUS_FLAG_OVERFLOW, old_acc >> 7 ^ nes->acc >> 7);
-    set_flag(nes, STATUS_FLAG_CARRY, nes->acc < old_acc);
+    set_flag(nes, STATUS_FLAG_OVERFLOW, overflow);
+    set_flag(nes, STATUS_FLAG_CARRY, nes->acc <= old_acc);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
@@ -411,6 +424,9 @@ void txs(struct Nes* nes) {
 
 void tsx(struct Nes* nes) {
     nes->x = nes->sp;
+
+    set_flag(nes, STATUS_FLAG_NEGATIVE, nes->x >> 7);
+    set_flag(nes, STATUS_FLAG_ZERO, nes->x == 0);
 }
 
 void pha(struct Nes* nes) {

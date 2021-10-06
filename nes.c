@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <assert.h>
+
 #include "nes.h"
 
 uint16_t make_u16(uint8_t hi, uint8_t lo) {
@@ -137,7 +140,7 @@ uint8_t step(struct Nes* nes) {
         case 0xB5: cycles = (addrm_zpx(nes), lda(nes), 4); break;
         case 0xAD: cycles = (addrm_abs(nes), lda(nes), 4); break;
         case 0xBD: cycles = (oops = addrm_abx(nes), lda(nes), 4 + oops); break;
-        case 0xB9: cycles = (oops = addrm_abx(nes), lda(nes), 4 + oops); break;
+        case 0xB9: cycles = (oops = addrm_aby(nes), lda(nes), 4 + oops); break;
         case 0xA1: cycles = (addrm_inx(nes), lda(nes), 6); break;
         case 0xB1: cycles = (oops = addrm_iny(nes), lda(nes), 5 + oops); break;
 
@@ -151,19 +154,43 @@ uint8_t step(struct Nes* nes) {
         // ldy
         case 0xA0: cycles = (addrm_imm(nes), ldy(nes), 2); break;
         case 0xA4: cycles = (addrm_zp(nes), ldy(nes), 3); break;
-        case 0xB4: cycles = (addrm_zpy(nes), ldy(nes), 4); break;
+        case 0xB4: cycles = (addrm_zpx(nes), ldy(nes), 4); break;
         case 0xAC: cycles = (addrm_abs(nes), ldy(nes), 4); break;
-        case 0xBC: cycles = (oops = addrm_aby(nes), ldy(nes), 4 + oops); break;
+        case 0xBC: cycles = (oops = addrm_abx(nes), ldy(nes), 4 + oops); break;
 
         // lsr
         case 0x4A: cycles = (lsr_imp(nes), 2); break;
         case 0x46: cycles = (addrm_zp(nes), lsr(nes), 5); break;
         case 0x56: cycles = (addrm_zpx(nes), lsr(nes), 6); break;
         case 0x4E: cycles = (addrm_abs(nes), lsr(nes), 6); break;
-        case 0x5E: cycles = (addrm_abx(nes), lsr(nes),7); break;
+        case 0x5E: cycles = (addrm_abx(nes), lsr(nes), 7); break;
 
         // nop
         case 0xEA: cycles = (nop(nes), 2); break;
+        case 0x1A: cycles = (nop(nes), 2); break;
+        case 0x3A: cycles = (nop(nes), 2); break;
+        case 0x5A: cycles = (nop(nes), 2); break;
+        case 0x7A: cycles = (nop(nes), 2); break;
+        case 0xDA: cycles = (nop(nes), 2); break;
+        case 0xFA: cycles = (nop(nes), 2); break;
+        case 0x04: cycles = (addrm_zp(nes), nop(nes), 3); break;
+        case 0x44: cycles = (addrm_zp(nes), nop(nes), 3); break;
+        case 0x64: cycles = (addrm_zp(nes), nop(nes), 3); break;
+        case 0x0C: cycles = (addrm_abs(nes), nop(nes), 4); break;
+        case 0x14: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0x34: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0x54: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0x74: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0xD4: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0xF4: cycles = (addrm_zpx(nes), nop(nes), 4); break;
+        case 0x80: cycles = (addrm_imm(nes), nop(nes), 2); break;
+        case 0x1C: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break; 
+        case 0x3C: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break; 
+        case 0x5C: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break; 
+        case 0x7C: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break; 
+        case 0xDC: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break; 
+        case 0xFC: cycles = (oops = addrm_abx(nes), nop(nes), 4 + oops); break;
+
 
         // ora
         case 0x09: cycles = (addrm_imm(nes), ora(nes), 2); break;
@@ -244,6 +271,9 @@ uint8_t step(struct Nes* nes) {
 
         default:
         // unhandled opcode error
+        printf("INVALID OPCODE %02X\n", op);
+        fflush(stdout);
+        assert(0);
         break;
     }
 
