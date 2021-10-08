@@ -35,6 +35,25 @@ int main(int argc, char* argv[]) {
         fflush(stdout);
         cyc += step(&nes);
     }
+    
+    // open window
+
+    SDL_Window* win = SDL_CreateWindow("NES Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Surface* surf = SDL_GetWindowSurface(win);
+    SDL_FillRect(surf, NULL, SDL_MapRGB(surf->format, 0x00, 0x00, 0x00)); //open a black window
+    SDL_UpdateWindowSurface(win);
+    bool stop = false;
+    SDL_Event event;
+    while(stop == false){
+        SDL_UpdateWindowSurface(win);
+        while(SDL_PollEvent(&event)!=0){
+            if(event.type==SDL_QUIT){
+                 stop = true;
+            }
+        }
+    }
+    SDL_DestroyWindow(win);
+    SDL_Quit();
 
     free_nes(&nes);
 }
