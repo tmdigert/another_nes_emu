@@ -1,5 +1,8 @@
 #include <stdint.h>
+#include <SDL2/SDL.h>
 
+#define HEIGHT                  500 //resolution height
+#define WIDTH                   500 //resolution width
 #define STATUS_FLAG_CARRY       0
 #define STATUS_FLAG_ZERO        1
 #define STATUS_FLAG_INTERRUPT   2
