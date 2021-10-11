@@ -10,6 +10,9 @@
 #define STATUS_FLAG_NEGATIVE    7
 
 struct Nes {
+    // Cartridge
+    uint8_t* cartridge;
+
     // CPU memory
     uint8_t cpu_ram[0x800];
 
@@ -23,8 +26,10 @@ struct Nes {
     uint16_t micro_addr;
 };
 
+uint16_t make_u16(uint8_t hi, uint8_t lo);
+
 // init/free
-void init_nes(struct Nes*);
+void init_nes(struct Nes*, uint8_t* rom);
 void free_nes(struct Nes*);
 
 // exec
@@ -32,14 +37,12 @@ uint8_t step(struct Nes*);
 
 // misc
 void set_flag(struct Nes*, uint8_t, uint8_t);
+uint8_t get_flag(struct Nes*, uint8_t);
 
 // read/write
 // https://wiki.nesdev.org/w/index.php/CPU_memory_map
 uint8_t cpu_read(struct Nes*, uint16_t);
 void cpu_write(struct Nes*, uint16_t, uint8_t);
-
-// as far as I'm aware, this is called for reach op
-uint8_t fetch_op(struct Nes*);
 
 // addressing modes (https://wiki.nesdev.org/w/index.php/CPU_addressing_modes)
 void    addrm_imp(struct Nes*); // ex. ROL A
@@ -56,10 +59,64 @@ void    addrm_inx(struct Nes*); // ex. LDA ($32, X)
 uint8_t addrm_iny(struct Nes*); // ex. LDA ($32), Y
 
 // instructions (https://wiki.nesdev.org/w/index.php/6502_instructions)
-void lda(struct Nes*);
-void sta(struct Nes*);
-void stx(struct Nes*);
-void sty(struct Nes*);
-void adc(struct Nes*);
-void sbc(struct Nes*);
+void    adc(struct Nes*);
+void    and(struct Nes*);
+void    asl(struct Nes*);
+void    asl_imp(struct Nes*);
+uint8_t bcc(struct Nes*);
+uint8_t bcs(struct Nes*);
+uint8_t beq(struct Nes*);
+void    bit(struct Nes*);
+uint8_t bmi(struct Nes*);
+uint8_t bne(struct Nes*);
+uint8_t bpl(struct Nes*);
+void    brk(struct Nes*);
+uint8_t bvc(struct Nes*);
+uint8_t bvs(struct Nes*);
+void    clc(struct Nes*);
+void    cld(struct Nes*);
+void    cli(struct Nes*);
+void    clv(struct Nes*);
+void    cmp(struct Nes*);
+void    cpx(struct Nes*);
+void    cpy(struct Nes*);
+void    dec(struct Nes*);
+void    dex(struct Nes*);
+void    dey(struct Nes*);
+void    eor(struct Nes*);
+void    inc(struct Nes*);
+void    inx(struct Nes*);
+void    iny(struct Nes*);
+void    jmp(struct Nes*);
+void    jsr(struct Nes*);
+void    lda(struct Nes*);
+void    ldx(struct Nes*);
+void    ldy(struct Nes*);
+void    lsr(struct Nes*);
+void    lsr_imp(struct Nes*);
+void    nop(struct Nes*);
+void    ora(struct Nes*);
+void    pha(struct Nes*);
+void    php(struct Nes*);
+void    pla(struct Nes*);
+void    plp(struct Nes*);
+void    rol(struct Nes*);
+void    rol_imp(struct Nes*);
+void    ror(struct Nes*);
+void    ror_imp(struct Nes*);
+void    rti(struct Nes*);
+void    rts(struct Nes*);
+void    sbc(struct Nes*);
+void    sec(struct Nes*);
+void    sed(struct Nes*);
+void    sei(struct Nes*);
+void    sta(struct Nes*);
+void    stx(struct Nes*);
+void    sty(struct Nes*);
+void    tax(struct Nes*);
+void    tay(struct Nes*);
+void    tsx(struct Nes*);
+void    txa(struct Nes*);
+void    txs(struct Nes*);
+void    tya(struct Nes*);
 // ..
