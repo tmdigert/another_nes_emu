@@ -64,7 +64,10 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 
 	// iNES 2.0 format 
 	uint8_t ines2 = header[7] & 0b1100 == 0b1000;
-	assert(!ines2); // for now
+	if (ines2) {
+		printf("  !iNES 2.0 headers unsupported!");
+		return -1;
+	}
 
 	// assume iNES
 	uint32_t prg_rom_size = header[4] * 0x4000;
