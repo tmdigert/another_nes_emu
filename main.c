@@ -2,9 +2,10 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
+#include "cartridge.h"
 #include "nes.h"
 
-int load_rom(char* filename, uint8_t header[16], uint8_t** rom) {
+/*int load_rom(char* filename, uint8_t header[16], uint8_t** rom) {
     FILE* fp = fopen(filename, "r");
     fseek(fp, 0, SEEK_END);
     int size = ftell(fp);
@@ -37,4 +38,11 @@ int main(int argc, char* argv[]) {
     }
 
     free_nes(&nes);
+}*/
+
+int main(int argc, char* argv[]) {
+    // load ROM
+    struct Cartridge cartridge;
+    load_cartridge_from_file("donkeykong.nes", &cartridge);
+    free_cartridge(&cartridge);
 }
