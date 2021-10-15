@@ -2,7 +2,6 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
-#include "cartridge.h"
 #include "nes.h"
 
 /*int load_rom(char* filename, uint8_t header[16], uint8_t** rom) {

@@ -110,3 +110,15 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 void free_cartridge(struct Cartridge* cartridge) {
 	free(cartridge->data);
 }
+
+uint8_t cartridge_prg_read(struct Cartridge* cartridge, uint16_t addr) {
+	return (cartridge->prg_read)(cartridge->data, addr);
+}
+
+uint8_t cartridge_chr_read(struct Cartridge* cartridge, uint16_t addr) {
+	return (cartridge->chr_read)(cartridge->data, addr);
+}
+
+void cartridge_prg_write(struct Cartridge* cartridge, uint16_t addr, uint8_t val) {
+	(cartridge->prg_write)(cartridge->data, addr, val);
+}

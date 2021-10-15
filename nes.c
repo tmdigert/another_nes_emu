@@ -7,7 +7,7 @@ uint16_t make_u16(uint8_t hi, uint8_t lo) {
     return ((uint16_t)hi << 8) | (uint16_t)lo;
 }
 
-void init_nes(struct Nes* nes, uint8_t* cartridge) {
+void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     // cartridge
     nes->cartridge = cartridge;
 
@@ -323,9 +323,8 @@ uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
         // unimplemented range
         return -1;
     }
-    // assume NROM
-    //printf("cartridge space: %04X\n", (addr - 0x8000) & 0x3FFF);
-    return nes->cartridge[(addr - 0x8000) & 0x3FFF];
+    // cart
+    return cartridge_prg_read(&nes->cartridge, addr);
 }
 
 void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
@@ -337,6 +336,7 @@ void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         // unimplemented range
         return;
     }
-    // assume NROM
+    // cart
+    cartridge_prg_write(&nes->cartridge, addr, byte);
     return;
 }
