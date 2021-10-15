@@ -22,6 +22,7 @@ struct Nes {
     uint16_t pc;
     uint8_t sp;
     uint8_t status;
+    uint8_t reset;
     // CPU micro
     uint16_t micro_addr;
 };
@@ -34,6 +35,7 @@ void free_nes(struct Nes*);
 
 // exec
 uint8_t step(struct Nes*);
+void reset(struct Nes*);
 
 // misc
 void set_flag(struct Nes*, uint8_t, uint8_t);

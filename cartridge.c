@@ -78,6 +78,15 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 	// create mapper
 	switch (mapper) {
 		case 0: {
+			if (prg_rom_size != 0x4000 || prg_rom_size != 0x8000) {
+				printf("  !Unsupported prg size for mapper 0!");
+				return -1;
+			}
+			if (chr_rom_size != 0x2000) {
+				printf("  !Unsupported chr size for mapper 0!");
+				return -1;
+			}
+
 			struct Mapper0* mapper0 = malloc(sizeof(struct Mapper0));
 			// copy prg and chr rom into cartridge
 			memcpy(&mapper0->prg_rom, data, prg_rom_size);
