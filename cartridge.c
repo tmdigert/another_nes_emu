@@ -4,6 +4,8 @@
 #include <string.h>
 #include "cartridge.h"
 
+uint16_t make_u16(uint8_t hi, uint8_t lo);
+
 int load_cartridge_from_file(char* filename, struct Cartridge* cartridge) {
 	printf("loading ROM: \"%s\".\n", filename);
 	int err = 0;
@@ -65,7 +67,7 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 	// iNES 2.0 format 
 	uint8_t ines2 = header[7] & 0b1100 == 0b1000;
 	if (ines2) {
-		printf("  !iNES 2.0 headers unsupported!");
+		printf("  !iNES 2.0 headers unsupported!\n");
 		return -1;
 	}
 
@@ -78,12 +80,12 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 	// create mapper
 	switch (mapper) {
 		case 0: {
-			if (prg_rom_size != 0x4000 || prg_rom_size != 0x8000) {
-				printf("  !Unsupported prg size for mapper 0!");
+			if (prg_rom_size != 0x4000 && prg_rom_size != 0x8000) {
+				printf("  !Unsupported prg size for mapper 0!\n");
 				return -1;
 			}
 			if (chr_rom_size != 0x2000) {
-				printf("  !Unsupported chr size for mapper 0!");
+				printf("  !Unsupported chr size for mapper 0!\n");
 				return -1;
 			}
 
@@ -95,7 +97,6 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 			mapper0->mask = prg_rom_size - 1;
 			// initialize cartridge
 			cartridge->data = mapper0;
-			cartridge->mapper = 0;
 			cartridge->prg_read = (void*)mapper0_prg_read;
 			cartridge->prg_write = (void*)mapper0_prg_write;
 			cartridge->chr_read = (void*)mapper0_chr_read;
@@ -105,6 +106,20 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 			return -1;
 		} break;
 	}
+
+	// for diagnostic purposes, read and print the interrupt vectors
+	uint16_t nmi, reset, irq;
+	uint8_t hi, lo;
+	lo = cartridge_prg_read(cartridge, 0xFFFA);
+	hi = cartridge_prg_read(cartridge, 0xFFFB);
+	nmi = make_u16(hi, lo);
+	lo = cartridge_prg_read(cartridge, 0xFFFC);
+	hi = cartridge_prg_read(cartridge, 0xFFFD);
+	reset = make_u16(hi, lo);
+	lo = cartridge_prg_read(cartridge, 0xFFFE);
+	hi = cartridge_prg_read(cartridge, 0xFFFF);
+	irq = make_u16(hi, lo);
+	printf("  Vectors:\n    nmi: 0x%04X\n    reset: 0x%04X\n    irq: 0x%04X\n", nmi, reset, irq);
 }
 
 void free_cartridge(struct Cartridge* cartridge) {

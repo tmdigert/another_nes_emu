@@ -2,8 +2,6 @@
 
 struct Cartridge {
 	void* data;
-	uint8_t mapper;
-
 	uint8_t (*prg_read)(void*, uint16_t);
 	uint8_t (*chr_read)(void*, uint16_t);
 	void (*prg_write)(void*, uint16_t, uint8_t);
