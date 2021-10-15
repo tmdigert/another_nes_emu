@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "cartridge.h"
+#include "mapper0.h"
 
 uint8_t mapper0_prg_read(struct Mapper0* mapper0, uint16_t addr) {
 	assert(addr >= 0x4020);

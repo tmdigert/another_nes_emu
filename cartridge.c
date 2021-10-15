@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cartridge.h"
+#include "mapper0.h"
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
 
