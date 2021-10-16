@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
     free_nes(&nes);
 }*/
 
+// opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
     switch (op) {
         case 0x69: case 0x65: case 0x75: case 0x6D: case 0x7D: case 0x79: case 0x61: case 0x71: return "adc";
@@ -55,34 +56,10 @@ char* lookup_opcode(uint8_t op) {
         case 0xF0: return "beq";
         case 0x00: return "brk";
         case 0xC9: case 0xC5:  case 0xD5:  case 0xCD:  case 0xDD:  case 0xD9:  case 0xC1:  case 0xD1: return "cmp";
-
-        // cpx
-        case 0xE0: return "cpx";
-        case 0xE4: return "cpx";
-        case 0xEC: return "cpx";
-
-        // cpy
-        case 0xC0: return "cpy";
-        case 0xC4: return "cpy";
-        case 0xCC: return "cpy";
-
-        // dec
-        case 0xC6: return "dec";
-        case 0xD6: return "dec";
-        case 0xCE: return "dec";
-        case 0xDE: return "dec";
-
-        // eor
-        case 0x49: return "eor";
-        case 0x45: return "eor";
-        case 0x55: return "eor";
-        case 0x4D: return "eor";
-        case 0x5D: return "eor";
-        case 0x59: return "eor";
-        case 0x41: return "eor";
-        case 0x51: return "eor";
-
-        // flag instructions
+        case 0xE0: case 0xE4: case 0xEC: return "cpx";
+        case 0xC0: case 0xC4: case 0xCC: return "cpy";
+        case 0xC6: case 0xD6: case 0xCE: case 0xDE: return "dec";
+        case 0x49: case 0x45: case 0x55: case 0x4D: case 0x5D: case 0x59: case 0x41: case 0x51: return "eor";
         case 0x18: return "clc";
         case 0x38: return "sec";
         case 0x58: return "cli";
@@ -90,89 +67,15 @@ char* lookup_opcode(uint8_t op) {
         case 0xB8: return "clv";
         case 0xD8: return "cld";
         case 0xF8: return "sed";
-
-        // inc
-        case 0xE6: return "inc";
-        case 0xF6: return "inc";
-        case 0xEE: return "inc";
-        case 0xFE: return "inc";
-
-        // jmp
-        case 0x4C: return "jmp";
-        case 0x6C: return "jmp";
-
-        // jsr
+        case 0xE6: case 0xF6: case 0xEE: case 0xFE: return "inc";
+        case 0x4C: case 0x6C: return "jmp";
         case 0x20: return "jsr";
-
-        // lda
-        case 0xA9: return "lda";
-        case 0xA5: return "lda";
-        case 0xB5: return "lda";
-        case 0xAD: return "lda";
-        case 0xBD: return "lda";
-        case 0xB9: return "lda";
-        case 0xA1: return "lda";
-        case 0xB1: return "lda";
-
-        // ldx
-        case 0xA2: return "ldx";
-        case 0xA6: return "ldx";
-        case 0xB6: return "ldx";
-        case 0xAE: return "ldx";
-        case 0xBE: return "ldx";
-
-        // ldy
-        case 0xA0: return "ldy";
-        case 0xA4: return "ldy";
-        case 0xB4: return "ldy";
-        case 0xAC: return "ldy";
-        case 0xBC: return "ldy";
-
-        // lsr
-        case 0x4A: return "lsr";
-        case 0x46: return "lsr";
-        case 0x56: return "lsr";
-        case 0x4E: return "lsr";
-        case 0x5E: return "lsr";
-
-        // nop
-        case 0xEA: return "nop";
-        case 0x1A: return "nop";
-        case 0x3A: return "nop";
-        case 0x5A: return "nop";
-        case 0x7A: return "nop";
-        case 0xDA: return "nop";
-        case 0xFA: return "nop";
-        case 0x04: return "nop";
-        case 0x44: return "nop";
-        case 0x64: return "nop";
-        case 0x0C: return "nop";
-        case 0x14: return "nop";
-        case 0x34: return "nop";
-        case 0x54: return "nop";
-        case 0x74: return "nop";
-        case 0xD4: return "nop";
-        case 0xF4: return "nop";
-        case 0x80: return "nop";
-        case 0x1C: return "nop";
-        case 0x3C: return "nop";
-        case 0x5C: return "nop";
-        case 0x7C: return "nop";
-        case 0xDC: return "nop";
-        case 0xFC: return "nop";
-
-
-        // ora
-        case 0x09: return "ora";
-        case 0x05: return "ora";
-        case 0x15: return "ora";
-        case 0x0D: return "ora";
-        case 0x1D: return "ora";
-        case 0x19: return "ora";
-        case 0x01: return "ora";
-        case 0x11: return "ora";
-
-        // register instructions
+        case 0xA9: case 0xA5: case 0xB5: case 0xAD: case 0xBD: case 0xB9: case 0xA1: case 0xB1: return "lda";
+        case 0xA2: case 0xA6: case 0xB6: case 0xAE: case 0xBE: return "ldx";
+        case 0xA0: case 0xA4: case 0xB4: case 0xAC: case 0xBC: return "ldy";
+        case 0x4A: case 0x46: case 0x56: case 0x4E: case 0x5E: return "lsr";
+        case 0xEA: case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA: case 0xFA: case 0x04: case 0x44: case 0x64: case 0x0C: case 0x14: case 0x34: case 0x54: case 0x74: case 0xD4: case 0xF4: case 0x80: case 0x1C: case 0x3C: case 0x5C: case 0x7C: case 0xDC: case 0xFC: return "nop";
+        case 0x09: case 0x05: case 0x15: case 0x0D: case 0x1D: case 0x19: case 0x01: case 0x11: return "ora";
         case 0xAA: return "tax";
         case 0x8A: return "txa";
         case 0xCA: return "dex";
@@ -181,60 +84,19 @@ char* lookup_opcode(uint8_t op) {
         case 0x98: return "tya";
         case 0x88: return "dey";
         case 0xC8: return "iny";
-
-        // rol
-        case 0x2A: return "rol";
-        case 0x26: return "rol";
-        case 0x36: return "rol";
-        case 0x2E: return "rol";
-        case 0x3E: return "rol";
-
-        // ror
-        case 0x6A: return "ror";
-        case 0x66: return "ror";
-        case 0x76: return "ror";
-        case 0x6E: return "ror";
-        case 0x7E: return "ror";
-
-        // rti
+        case 0x2A: case 0x26: case 0x36: case 0x2E: case 0x3E: return "rol";
+        case 0x6A: case 0x66: case 0x76: case 0x6E: case 0x7E: return "ror";
         case 0x40: return "rti";
-
-        // rts
         case 0x60: return "rts";
-
-        // sbc
-        case 0xE9: return "sbc";
-        case 0xE5: return "sbc";
-        case 0xF5: return "sbc";
-        case 0xED: return "sbc";
-        case 0xFD: return "sbc";
-        case 0xF9: return "sbc";
-        case 0xE1: return "sbc";
-        case 0xF1: return "sbc";
-        
-        // sta
-        case 0x85: return "sta";
-        case 0x95: return "sta";
-        case 0x8D: return "sta";
-        case 0x9D: return "sta";
-        case 0x99: return "sta";
-        case 0x81: return "sta";
-        case 0x91: return "sta";
-
-        //stack instructions
+        case 0xE9: case 0xE5: case 0xF5: case 0xED: case 0xFD: case 0xF9: case 0xE1: case 0xF1: return "sbc";
+        case 0x85: case 0x95: case 0x8D: case 0x9D: case 0x99: case 0x81: case 0x91: return "sta";
         case 0x9A: return "txs";
         case 0xBA: return "tsx";
         case 0x48: return "pha";
         case 0x68: return "pla";
         case 0x08: return "php";
         case 0x28: return "plp";
-
-        // stx
-        case 0x86: return "stx";
-        case 0x96: return "stx";
-        case 0x8E: return "stx"; 
-
-        // sty
+        case 0x86: case 0x96: case 0x8E: return "stx"; 
         case 0x84: case 0x94: case 0x8C: return "sty";
         default: return "inv";
     }
@@ -254,7 +116,7 @@ int main(int argc, char* argv[]) {
 
     // do
     int acc_cycle = 0;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 15; i++) {
         int cycle = step(&nes);
         uint8_t next = cpu_read(&nes, nes.pc);
         printf("cycle: %8i, pc: 0x%04X, A/X/Y: $%02X/$%02X/$%02X, sp: $%02X, status: $%02X, next op: 0x%02X (%s)\n", cycle, nes.pc, nes.acc, nes.x, nes.y, nes.sp, nes.status, next, lookup_opcode(next));

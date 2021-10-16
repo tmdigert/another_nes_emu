@@ -322,9 +322,7 @@ uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
        return nes->cpu_ram[addr];
     }
     if (addr <= 0x401F) {
-        printf("PPU CALL: 0x%04X\n", addr);
-        // unimplemented range
-        return -1;
+        return 0;
     }
     // cart
     return cartridge_prg_read(&nes->cartridge, addr);
