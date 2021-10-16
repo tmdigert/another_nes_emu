@@ -14,10 +14,8 @@ struct Nes {
     // Cartridge
     struct Cartridge cartridge;
 
-    // CPU memory
-    uint8_t cpu_ram[0x800];
-
     // CPU
+    uint8_t ram[0x0800];
     uint8_t acc;
     uint8_t x, y;
     uint16_t pc;
@@ -26,6 +24,17 @@ struct Nes {
     uint8_t reset;
     // CPU micro
     uint16_t micro_addr;
+
+    // PPU
+    uint8_t vram[0x0800];
+    uint8_t oam[0xFF];
+    uint8_t palette[0x20];
+    uint8_t ppuctrl; // ppu register @ 0x2000
+    uint8_t ppumask; // ppu register @ 0x2001
+    uint8_t ppustatus; // ppu register @ 0x2002
+    uint8_t oamaddr; // ppu register @ 0x2003
+    uint16_t ppuscroll; // ppu register @ 0x2005
+    uint16_t ppuaddr; // ppu register @ 0x2006
 };
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
@@ -35,17 +44,21 @@ void init_nes(struct Nes*, struct Cartridge);
 void free_nes(struct Nes*);
 
 // exec
-uint8_t step(struct Nes*);
+uint8_t step_cpu(struct Nes*);
+void    step_ppu(struct Nes*, uint8_t);
 void reset(struct Nes*);
 
 // misc
 void set_flag(struct Nes*, uint8_t, uint8_t);
 uint8_t get_flag(struct Nes*, uint8_t);
 
-// read/write
+// bus
 // https://wiki.nesdev.org/w/index.php/CPU_memory_map
-uint8_t cpu_read(struct Nes*, uint16_t);
-void cpu_write(struct Nes*, uint16_t, uint8_t);
+uint8_t cpu_bus_read(struct Nes*, uint16_t);
+void cpu_bus_write(struct Nes*, uint16_t, uint8_t);
+// https://wiki.nesdev.org/w/index.php/PPU_memory_map
+uint8_t ppu_bus_read(struct Nes*, uint16_t);
+void ppu_bus_write(struct Nes*, uint16_t, uint8_t);
 
 // addressing modes (https://wiki.nesdev.org/w/index.php/CPU_addressing_modes)
 void    addrm_imp(struct Nes*); // ex. ROL A

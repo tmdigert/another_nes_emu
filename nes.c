@@ -18,8 +18,16 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->pc = 0;
     nes->sp = 0x00;
     nes->status = 0x34;
-    // the nes will perform a reset interrupt upon boot
-    reset(nes);
+    nes->reset = 1; // the nes will perform a reset interrupt upon boot
+
+    // https://wiki.nesdev.org/w/index.php/PPU_power_up_state
+    nes->ppuctrl = 0;
+    nes->ppumask = 0;
+    nes->ppustatus = 0xA0;
+    nes->oamaddr = 0;
+    // TODO: ppulatch cleared
+    nes->ppuscroll = 0;
+    nes->ppuaddr = 0;
 }
 
 void free_nes(struct Nes* nes) {
@@ -30,7 +38,7 @@ void reset(struct Nes* nes) {
     nes->reset = 1;
 }
 
-uint8_t step(struct Nes* nes) {
+uint8_t step_cpu(struct Nes* nes) {
     // perform reset if necessary
     if (nes->reset) {
         nes->reset = 0;
@@ -39,8 +47,8 @@ uint8_t step(struct Nes* nes) {
         nes->sp -= 3;
         
         // read the reset vector (always starts at 0xFFFC)
-        uint8_t lo = cpu_read(nes, 0xFFFC);
-        uint8_t hi = cpu_read(nes, 0xFFFD);
+        uint8_t lo = cpu_bus_read(nes, 0xFFFC);
+        uint8_t hi = cpu_bus_read(nes, 0xFFFD);
         nes->pc = make_u16(hi, lo);
 
         // set flag
@@ -51,7 +59,7 @@ uint8_t step(struct Nes* nes) {
     }
 
     // fetch first opcode
-    uint8_t op = cpu_read(nes, nes->pc);
+    uint8_t op = cpu_bus_read(nes, nes->pc);
     nes->pc += 1;
 
     //
@@ -307,6 +315,10 @@ uint8_t step(struct Nes* nes) {
     return cycles;
 }
 
+void step_ppu(struct Nes* nes, uint8_t cycles) {
+
+}
+
 void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
     nes->status &= ~(1 << n); // clear nth bit
     nes->status |= val << n; // set nth bit to val
@@ -314,30 +326,4 @@ void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
 
 uint8_t get_flag(struct Nes* nes, uint8_t n) {
     return (nes->status >> n) & 0x01;
-}
-
-uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
-    if (addr <= 0x1FFF) {
-        addr &= 0x07FF;
-       return nes->cpu_ram[addr];
-    }
-    if (addr <= 0x401F) {
-        return 0;
-    }
-    // cart
-    return cartridge_prg_read(&nes->cartridge, addr);
-}
-
-void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
-    if (addr <= 0x1FFF) {
-        nes->cpu_ram[addr &= 0x07FF] = byte;
-        return;
-    }
-    if (addr <= 0x401F) {
-        // unimplemented range
-        return;
-    }
-    // cart
-    cartridge_prg_write(&nes->cartridge, addr, byte);
-    return;
 }

@@ -1,7 +1,7 @@
 #include "nes.h"
 
 void adc(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t old_acc = nes->acc;
     nes->acc += val + get_flag(nes, STATUS_FLAG_CARRY);
 
@@ -13,17 +13,17 @@ void adc(struct Nes* nes) {
 }
 
 void and(struct Nes* nes) {
-    nes->acc &= cpu_read(nes, nes->micro_addr);
+    nes->acc &= cpu_bus_read(nes, nes->micro_addr);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
 void asl(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t bit7 = val >> 7;
     val <<= 1;
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, val >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, val == 0);
@@ -40,7 +40,7 @@ void asl_imp(struct Nes* nes) {
 }
 
 void bit(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t bit7 = val >> 7;
     uint8_t bit6 = (val >> 6) & 0x01;
 
@@ -136,7 +136,7 @@ void brk(struct Nes* nes) {
 // carry unset
 
 void cmp(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t dummy_acc = nes->acc + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_acc >> 7);
@@ -145,7 +145,7 @@ void cmp(struct Nes* nes) {
 }
 
 void cpx(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t dummy_x = nes->x + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_x >> 7);
@@ -154,7 +154,7 @@ void cpx(struct Nes* nes) {
 }
 
 void cpy(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t dummy_y = nes->y + ~val + 1;
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, dummy_y >> 7);
@@ -163,16 +163,16 @@ void cpy(struct Nes* nes) {
 }
 
 void dec(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     val -= 1;
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, val >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, val == 0); 
 }
 
 void eor(struct Nes* nes) {
-    nes->acc ^= cpu_read(nes, nes->micro_addr);
+    nes->acc ^= cpu_bus_read(nes, nes->micro_addr);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0); 
@@ -207,9 +207,9 @@ void sed(struct Nes* nes) {
 }
 
 void inc(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     val += 1;
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, val >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, val == 0); 
@@ -223,39 +223,39 @@ void jmp(struct Nes* nes) {
 
 void jsr(struct Nes* nes) {
     uint16_t addr = nes->pc - 1; //
-    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(addr >> 8));
+    cpu_bus_write(nes, 0x0100 | nes->sp, (uint8_t)(addr >> 8));
     nes->sp -= 1;
-    cpu_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
+    cpu_bus_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
     nes->sp -= 1;
     nes->pc = nes->micro_addr;
 }
 
 void lda(struct Nes* nes) {
-    nes->acc = cpu_read(nes, nes->micro_addr);
+    nes->acc = cpu_bus_read(nes, nes->micro_addr);
     
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
 void ldx(struct Nes* nes) {
-    nes->x = cpu_read(nes, nes->micro_addr);
+    nes->x = cpu_bus_read(nes, nes->micro_addr);
     
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->x >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->x == 0);
 }
 
 void ldy(struct Nes* nes) {
-    nes->y = cpu_read(nes, nes->micro_addr);
+    nes->y = cpu_bus_read(nes, nes->micro_addr);
     
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->y >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->y == 0);
 }
 
 void lsr(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t bit0 = val & 0x01;
     val >>= 1;
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, 0); // can this ever be negative?
     set_flag(nes, STATUS_FLAG_ZERO, val == 0);
@@ -276,7 +276,7 @@ void nop(struct Nes* nes) {
 }
 
 void ora(struct Nes* nes) {
-    nes->acc |= cpu_read(nes, nes->micro_addr);
+    nes->acc |= cpu_bus_read(nes, nes->micro_addr);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
@@ -339,11 +339,11 @@ void iny(struct Nes* nes) {
 }
 
 void rol(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t bit7 = val >> 7;
     val <<= 1;
     val |= get_flag(nes, STATUS_FLAG_CARRY); // bit0 = carry
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, val >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, val == 0);
@@ -361,11 +361,11 @@ void rol_imp(struct Nes* nes) {
 }
 
 void ror(struct Nes* nes) {
-    uint8_t val = cpu_read(nes, nes->micro_addr);
+    uint8_t val = cpu_bus_read(nes, nes->micro_addr);
     uint8_t bit0 = val & 0x01;
     val >>= 1;
     val |= get_flag(nes, STATUS_FLAG_CARRY) << 7; // bit7 = carry
-    cpu_write(nes, nes->micro_addr, val);
+    cpu_bus_write(nes, nes->micro_addr, val);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, val >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, val == 0);
@@ -386,25 +386,25 @@ void ror_imp(struct Nes* nes) {
 // should be:   10100111
 void rti(struct Nes* nes) {
     nes->sp += 1;
-    nes->status = cpu_read(nes, 0x0100 | nes->sp) | 0b00100000;
+    nes->status = cpu_bus_read(nes, 0x0100 | nes->sp) | 0b00100000;
     nes->sp += 1;
-    uint8_t lo = cpu_read(nes, 0x0100 | nes->sp);
+    uint8_t lo = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->sp += 1;
-    uint8_t hi = cpu_read(nes, 0x0100 | nes->sp);
+    uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo);
 }
 
 void rts(struct Nes* nes) {
     nes->sp += 1;
-    uint8_t lo = cpu_read(nes, 0x0100 | nes->sp);
+    uint8_t lo = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->sp += 1;
-    uint8_t hi = cpu_read(nes, 0x0100 | nes->sp);
+    uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo) + 1; // +1 ?
 }
 
 void sbc(struct Nes* nes) {
     uint8_t old_acc = nes->acc;
-    uint8_t val = ~cpu_read(nes, nes->micro_addr);
+    uint8_t val = ~cpu_bus_read(nes, nes->micro_addr);
     nes->acc += val + get_flag(nes, STATUS_FLAG_CARRY);
 
     uint8_t overflow = (val ^ old_acc) < 0x80 && (val ^ nes->acc) >> 7;
@@ -415,7 +415,7 @@ void sbc(struct Nes* nes) {
 }
 
 void sta(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->acc);
+    cpu_bus_write(nes, nes->micro_addr, nes->acc);
 }
 
 void txs(struct Nes* nes) {
@@ -430,32 +430,32 @@ void tsx(struct Nes* nes) {
 }
 
 void pha(struct Nes* nes) {
-    cpu_write(nes, 0x0100 | nes->sp, nes->acc);
+    cpu_bus_write(nes, 0x0100 | nes->sp, nes->acc);
     nes->sp -= 1;
 }
 
 void pla(struct Nes* nes) {
     nes->sp += 1;
-    nes->acc = cpu_read(nes, 0x0100 | nes->sp);
+    nes->acc = cpu_bus_read(nes, 0x0100 | nes->sp);
 
     set_flag(nes, STATUS_FLAG_NEGATIVE, nes->acc >> 7);
     set_flag(nes, STATUS_FLAG_ZERO, nes->acc == 0);
 }
 
 void php(struct Nes* nes) {
-    cpu_write(nes, 0x0100 | nes->sp, nes->status | 0b00110000);
+    cpu_bus_write(nes, 0x0100 | nes->sp, nes->status | 0b00110000);
     nes->sp -= 1;
 }
 
 void plp(struct Nes* nes) {
     nes->sp += 1;
-    nes->status = cpu_read(nes, 0x0100 | nes->sp) & 0b11101111 | 0b00100000;
+    nes->status = cpu_bus_read(nes, 0x0100 | nes->sp) & 0b11101111 | 0b00100000;
 }
 
 void stx(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->x);
+    cpu_bus_write(nes, nes->micro_addr, nes->x);
 }
 
 void sty(struct Nes* nes) {
-    cpu_write(nes, nes->micro_addr, nes->y);
+    cpu_bus_write(nes, nes->micro_addr, nes->y);
 }
