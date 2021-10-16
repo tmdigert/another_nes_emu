@@ -17,12 +17,14 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->y = 0;
     nes->pc = 0;
     nes->sp = 0x00;
-    nes->status = 0x24;
+    nes->status = 0x34;
     // the nes will perform a reset interrupt upon boot
     reset(nes);
 }
 
-void free_nes(struct Nes* nes) { }
+void free_nes(struct Nes* nes) {
+    free_cartridge(&nes->cartridge);
+}
 
 void reset(struct Nes* nes) {
     nes->reset = 1;
@@ -320,6 +322,7 @@ uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
        return nes->cpu_ram[addr];
     }
     if (addr <= 0x401F) {
+        printf("PPU CALL: 0x%04X\n", addr);
         // unimplemented range
         return -1;
     }
