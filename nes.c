@@ -7,7 +7,7 @@ uint16_t make_u16(uint8_t hi, uint8_t lo) {
     return ((uint16_t)hi << 8) | (uint16_t)lo;
 }
 
-void init_nes(struct Nes* nes, uint8_t* cartridge) {
+void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     // cartridge
     nes->cartridge = cartridge;
 
@@ -16,13 +16,40 @@ void init_nes(struct Nes* nes, uint8_t* cartridge) {
     nes->x = 0;
     nes->y = 0;
     nes->pc = 0;
-    nes->sp = 0xFD;
-    nes->status = 0x24;
+    nes->sp = 0x00;
+    nes->status = 0x34;
+    // the nes will perform a reset interrupt upon boot
+    reset(nes);
 }
 
-void free_nes(struct Nes* nes) { }
+void free_nes(struct Nes* nes) {
+    free_cartridge(&nes->cartridge);
+}
+
+void reset(struct Nes* nes) {
+    nes->reset = 1;
+}
 
 uint8_t step(struct Nes* nes) {
+    // perform reset if necessary
+    if (nes->reset) {
+        nes->reset = 0;
+        
+        // reset suppresses the writes done when pushing to the stack, so just dec stack pointer
+        nes->sp -= 3;
+        
+        // read the reset vector (always starts at 0xFFFC)
+        uint8_t lo = cpu_read(nes, 0xFFFC);
+        uint8_t hi = cpu_read(nes, 0xFFFD);
+        nes->pc = make_u16(hi, lo);
+
+        // set flag
+        set_flag(nes, STATUS_FLAG_INTERRUPT, 1);
+
+        // all interrupts (including reset) take 7 cycles
+        return 7;
+    }
+
     // fetch first opcode
     uint8_t op = cpu_read(nes, nes->pc);
     nes->pc += 1;
@@ -295,12 +322,10 @@ uint8_t cpu_read(struct Nes* nes, uint16_t addr) {
        return nes->cpu_ram[addr];
     }
     if (addr <= 0x401F) {
-        // unimplemented range
-        return -1;
+        return 0;
     }
-    // assume NROM
-    //printf("cartridge space: %04X\n", (addr - 0x8000) & 0x3FFF);
-    return nes->cartridge[(addr - 0x8000) & 0x3FFF];
+    // cart
+    return cartridge_prg_read(&nes->cartridge, addr);
 }
 
 void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
@@ -312,6 +337,7 @@ void cpu_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         // unimplemented range
         return;
     }
-    // assume NROM
+    // cart
+    cartridge_prg_write(&nes->cartridge, addr, byte);
     return;
 }

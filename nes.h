@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "cartridge.h"
 
 #define STATUS_FLAG_CARRY       0
 #define STATUS_FLAG_ZERO        1
@@ -11,7 +12,7 @@
 
 struct Nes {
     // Cartridge
-    uint8_t* cartridge;
+    struct Cartridge cartridge;
 
     // CPU memory
     uint8_t cpu_ram[0x800];
@@ -22,6 +23,7 @@ struct Nes {
     uint16_t pc;
     uint8_t sp;
     uint8_t status;
+    uint8_t reset;
     // CPU micro
     uint16_t micro_addr;
 };
@@ -29,11 +31,12 @@ struct Nes {
 uint16_t make_u16(uint8_t hi, uint8_t lo);
 
 // init/free
-void init_nes(struct Nes*, uint8_t* rom);
+void init_nes(struct Nes*, struct Cartridge);
 void free_nes(struct Nes*);
 
 // exec
 uint8_t step(struct Nes*);
+void reset(struct Nes*);
 
 // misc
 void set_flag(struct Nes*, uint8_t, uint8_t);
