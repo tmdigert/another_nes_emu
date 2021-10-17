@@ -20,6 +20,10 @@ struct Nes {
     // CPU memory
     uint8_t cpu_ram[0x800];
 
+    //CONTROLER
+    uint8_t strobe;
+    uint8_t joy1, joy2;
+    
     // CPU
     uint8_t acc;
     uint8_t x, y;
