@@ -88,6 +88,73 @@ int main(int argc, char* argv[]) {
         acc_cycle += cycle;
     }
 
+    //SDL
+
+    const Uint8 *keyboard = SDL_GetKeyboardState(NULL);
+    SDL_Surface* surf = NULL;
+    SDL_Window* win = NULL;
+
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+        printf("WARNING: SDL failed on init with error:  %s\n", SDL_GetError());
+    }
+
+    else{
+        win = SDL_CreateWindow("NES Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+        if(win == NULL){
+            printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
+        }
+
+        else{
+            surf = SDL_GetWindowSurface(win);
+            SDL_FillRect(surf, NULL, SDL_MapRGB(surf->format, 0x00, 0x00, 0x00));
+            SDL_UpdateWindowSurface(win);
+            bool stop = false;
+            SDL_Event event;
+            while(stop == false){
+                 
+                 SDL_UpdateWindowSurface(win);
+                 while(SDL_PollEvent(&event)!=0){
+                 if(event.type==SDL_QUIT){
+                      stop = true;
+                 }
+		
+                 }
+                 
+                 //check controller
+                 if(nes.strobe!=0x0){
+                 if(keyboard[SDL_SCANCODE_Z]){ //a
+                      nes->joy1+=0x1;
+                 }
+                 if(keyboard[SDL_SCANCODE_X){ //b
+                      nes->joy1+=0x2;
+                 }
+                 if(keyboard[SDL_SCANCODE_Q){ //select
+                      nes->joy1+=0x10;
+                 }
+                 if(keyboard[SDL_SCANCODE_W){ //start
+                      nes->joy1+=0x20;
+                 }
+                 if(keyboard[SDL_SCANCODE_UP){ //up
+                      nes->joy1+=0x40;
+                 }
+                 if(keyboard[SDL_SCANCODE_LEFT){ //down
+                      nes->joy1+=0x80
+                 }
+                 if(keyboard[SDL_SCANCODE_RIGHT){ //left
+                      nes->joy1+=0x160
+                 }
+                 if(keyboard[SDL_SCANCODE_DOWN){ //right
+                      nes->joy1+=0x320
+                 }
+
+                 }
+            }
+        }
+    }
+    SDL_DestroyWindow(win);
+    SDL_Quit();
+
+
     // free nes
     free_nes(&nes);
 }
