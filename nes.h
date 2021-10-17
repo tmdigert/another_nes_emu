@@ -10,6 +10,9 @@
 #define STATUS_FLAG_OVERFLOW    6
 #define STATUS_FLAG_NEGATIVE    7
 
+#define HEIGHT  500 //resolution height
+#define WIDTH  500 //resolution width
+
 struct Nes {
     // Cartridge
     struct Cartridge cartridge;
