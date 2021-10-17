@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
                  
                  //check controller
                  if(nes.strobe!=0x0){
+	         nes->joy1 = 0x0 //clear on strobe
                  if(keyboard[SDL_SCANCODE_Z]){ //a
                       nes->joy1+=0x1;
                  }
