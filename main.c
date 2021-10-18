@@ -4,6 +4,41 @@
 
 #include "nes.h"
 
+/*int load_rom(char* filename, uint8_t header[16], uint8_t** rom) {
+    FILE* fp = fopen(filename, "r");
+    fseek(fp, 0, SEEK_END);
+    int size = ftell(fp);
+    printf("Rom loaded with size %i\n", size);
+    *rom = malloc(size - 16);
+    fseek (fp , 0, SEEK_SET);
+    fread(header, 1, 16, fp);
+    fseek (fp , 16 , SEEK_SET);
+    fread(*rom, 1, size - 16, fp);
+    fclose(fp);
+}
+
+int main(int argc, char* argv[]) {
+    // load ROM
+    uint8_t header[16];
+    uint8_t* rom = 0;
+    load_rom("nestest.nes", header, &rom);
+
+    // generate nes
+    struct Nes nes;
+    init_nes(&nes, rom);
+    nes.pc = 0xC000;
+
+    // step the nes 7 times (complete first brk)
+    int cyc = 7;
+    for (int instr = 1; instr <= 6000; instr++) {
+        printf("%6i PC:%04X A:%02X X:%02X Y:%02X P:%02X, SP:%02X CYC:%i\n", instr, nes.pc, nes.acc, nes.x, nes.y, nes.status, nes.sp, cyc);
+        fflush(stdout);
+        cyc += step(&nes);
+    }
+
+    free_nes(&nes);
+}*/
+
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
     switch (op) {
@@ -88,7 +123,6 @@ int main(int argc, char* argv[]) {
         acc_cycle += cycle;
     }
 
-    //SDL
 
     const Uint8 *keyboard = SDL_GetKeyboardState(NULL);
     SDL_Surface* surf = NULL;
@@ -120,9 +154,8 @@ int main(int argc, char* argv[]) {
 		
                  }
                  
-                 //check controller
-                 if(nes.strobe!=0x0){
-	         nes->joy1 = 0x0 //clear on strobe
+                
+	         nes->joy1 = 0x0 //clear on cycle
                  if(keyboard[SDL_SCANCODE_Z]){ //a
                       nes->joy1+=0x1;
                  }
@@ -138,22 +171,23 @@ int main(int argc, char* argv[]) {
                  if(keyboard[SDL_SCANCODE_UP){ //up
                       nes->joy1+=0x40;
                  }
-                 if(keyboard[SDL_SCANCODE_LEFT){ //down
+                 if(keyboard[SDL_SCANCODE_DOWN){ //down
                       nes->joy1+=0x80
                  }
-                 if(keyboard[SDL_SCANCODE_RIGHT){ //left
+                 if(keyboard[SDL_SCANCODE_LEFT){ //left
                       nes->joy1+=0x160
                  }
-                 if(keyboard[SDL_SCANCODE_DOWN){ //right
+                 if(keyboard[SDL_SCANCODE_RIGHT){ //right
                       nes->joy1+=0x320
                  }
 
-                 }
+                 
             }
         }
     }
     SDL_DestroyWindow(win);
     SDL_Quit();
+
 
 
     // free nes
