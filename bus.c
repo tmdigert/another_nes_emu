@@ -28,8 +28,9 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
     	if( addr == 4016){
-		nes->ram[addr] = (nes->joy1 >> 7) << 7;
-		nes->joy1 >> 1
+		uint8_t val = (nes->joy1sys >> 7);
+  		nes->joy1sys >>= 1;
+  		return val;
 	}
     	return 0;
     }
@@ -73,13 +74,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 	// APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
     	if(addr == 0x4016){
-		if(byte != 0x0){
-			nes->strobe = 0x1;
-		}
-		else{
-			nes->strobe = 0;
-		}
-		nes->ram[addr] = byte;
+		nes->joy1sys = nes->joy1
 	}
     	return;
     }
