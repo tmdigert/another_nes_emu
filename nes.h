@@ -10,9 +10,6 @@
 #define STATUS_FLAG_OVERFLOW    6
 #define STATUS_FLAG_NEGATIVE    7
 
-#define HEIGHT  500 //resolution height
-#define WIDTH  500 //resolution width
-
 struct Nes {
     // Cartridge
     struct Cartridge cartridge;
@@ -21,9 +18,9 @@ struct Nes {
     uint8_t cpu_ram[0x800];
 
     //CONTROLER
-    uint8_t strobe;
-    uint8_t joy1, joy2;
-    
+    uint8_t joy1, joy2; //SDL interface controller values
+    uint8_t joy1sys, joy2sys; //internal controller values
+
     // CPU
     uint8_t acc;
     uint8_t x, y;
