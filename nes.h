@@ -21,7 +21,9 @@ struct Nes {
     uint16_t pc;
     uint8_t sp;
     uint8_t status;
+    // interrupt 
     uint8_t reset;
+    uint8_t nmi;
     // CPU micro
     uint16_t micro_addr;
 
@@ -29,6 +31,7 @@ struct Nes {
     uint8_t vram[0x0800];
     uint8_t oam[0xFF];
     uint8_t palette[0x20];
+    uint16_t cycle;
     uint8_t ppuctrl; // ppu register @ 0x2000
     uint8_t ppumask; // ppu register @ 0x2001
     uint8_t ppustatus; // ppu register @ 0x2002

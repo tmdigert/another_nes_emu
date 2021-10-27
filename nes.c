@@ -19,8 +19,10 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->sp = 0x00;
     nes->status = 0x34;
     nes->reset = 1; // the nes will perform a reset interrupt upon boot
+    nes->nmi = 0;
 
     // https://wiki.nesdev.org/w/index.php/PPU_power_up_state
+    nes->cycle = 0;
     nes->ppuctrl = 0;
     nes->ppumask = 0;
     nes->ppustatus = 0xA0;
@@ -54,7 +56,31 @@ uint8_t step_cpu(struct Nes* nes) {
         // set flag
         set_flag(nes, STATUS_FLAG_INTERRUPT, 1);
 
-        // all interrupts (including reset) take 7 cycles
+        // all interrupts take 7 cycles
+        return 7;
+    }
+
+    // perform nmi if necessary
+    if (nes->nmi) {
+        nes->nmi = 0;
+        
+        // push
+        cpu_bus_write(nes, 0x0100 | nes->sp, nes->pc >> 8);
+        nes->sp -= 1;
+        cpu_bus_write(nes, 0x0100 | nes->sp, nes->pc & 0xFF);
+        nes->sp -= 1;
+        cpu_bus_write(nes, 0x0100 | nes->sp, nes->status);
+        nes->sp -= 1;
+
+        // read the nmi vector (always starts at 0xFFFA)
+        uint8_t lo = cpu_bus_read(nes, 0xFFFA);
+        uint8_t hi = cpu_bus_read(nes, 0xFFFB);
+        nes->pc = make_u16(hi, lo);
+
+        // set flag
+        set_flag(nes, STATUS_FLAG_INTERRUPT, 1);
+
+        // all interrupts take 7 cycles
         return 7;
     }
 
@@ -316,7 +342,20 @@ uint8_t step_cpu(struct Nes* nes) {
 }
 
 void step_ppu(struct Nes* nes, uint8_t cycles) {
+    // advance cycle
+    uint16_t old_cycle = nes->cycle;
+    nes->cycle += cycles;
 
+    // vblank occur scanline 241 cycle 1
+    if (old_cycle < 82182 && nes->cycle >= 82182) {
+        nes->nmi = 1;
+        nes->ppustatus &= 0x80; // set vblank flag
+    }
+
+    // vblank ends scanline 260, cycle 340
+    if (nes->cycle >= 89342) {
+        nes->cycle -= 89342;
+    }
 }
 
 void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
