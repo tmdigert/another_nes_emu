@@ -53,11 +53,11 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 		switch (0x2000 | (addr & 0b111)) {
 			case 0x2006: {
 				nes->ppuaddr = (nes->ppuaddr << 8) | byte;
-				nes->ppuaddr += nes->ppuctrl & 0b0100 > 0;
+				nes->ppuaddr += (nes->ppuctrl & 0b0100 > 0) * 31 + 1;
 			} break;
 			case 0x2007: {
 				ppu_bus_write(nes, nes->ppuaddr, byte); 
-				nes->ppuaddr += nes->ppuctrl & 0b0100 > 0;
+				nes->ppuaddr += (nes->ppuctrl & 0b0100 > 0) * 31 + 1;
 			} break;
 			default: {
 				printf("Unimplemented CPU bus write: 0x%04X\n", addr);
