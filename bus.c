@@ -51,6 +51,16 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 	if (addr <= 0x3FFF) {
 		// TODO: most of these are probably wrong
 		switch (0x2000 | (addr & 0b111)) {
+			case 0x2000: {
+				nes->ppuctrl = byte;
+			} break;
+			case 0x2001: {
+				nes->ppumask = byte;
+			} break;
+			case 0x2005: {
+				nes->ppuscroll <<= 8;
+				nes->ppuscroll |= byte;
+			} break;
 			case 0x2006: {
 				nes->ppuaddr = (nes->ppuaddr << 8) | byte;
 				nes->ppuaddr += (nes->ppuctrl & 0b0100 > 0) * 31 + 1;

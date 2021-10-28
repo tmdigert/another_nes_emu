@@ -79,13 +79,19 @@ int main(int argc, char* argv[]) {
     struct Nes nes;
     init_nes(&nes, cartridge);
 
+    // until vblank
+
     // do
     int acc_cycle = 0;
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; ; i++) {
         int cycle = step_cpu(&nes);
         step_ppu(&nes, cycle);
+
+        /*
         uint8_t next = cpu_bus_read(&nes, nes.pc);
         printf("cycle: %8i, pc: 0x%04X, A/X/Y: $%02X/$%02X/$%02X, sp: $%02X, status: $%02X, next op: 0x%02X (%s)\n", cycle, nes.pc, nes.acc, nes.x, nes.y, nes.sp, nes.status, next, lookup_opcode(next));
+        */        
+
         acc_cycle += cycle;
     }
 
