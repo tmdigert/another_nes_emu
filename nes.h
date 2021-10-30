@@ -31,7 +31,7 @@ struct Nes {
     uint8_t vram[0x0800];
     uint8_t oam[0xFF];
     uint8_t palette[0x20];
-    uint16_t cycle;
+    uint32_t cycle;
     uint8_t ppuctrl; // ppu register @ 0x2000
     uint8_t ppumask; // ppu register @ 0x2001
     uint8_t ppustatus; // ppu register @ 0x2002
@@ -48,7 +48,7 @@ void free_nes(struct Nes*);
 
 // exec
 uint8_t step_cpu(struct Nes*);
-void    step_ppu(struct Nes*, uint8_t);
+uint8_t step_ppu(struct Nes*, uint8_t);
 void reset(struct Nes*);
 
 // misc

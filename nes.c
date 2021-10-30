@@ -25,7 +25,7 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->cycle = 0;
     nes->ppuctrl = 0;
     nes->ppumask = 0;
-    nes->ppustatus = 0xA0;
+    nes->ppustatus = 0b00000000; // 1010_0000
     nes->oamaddr = 0;
     // TODO: ppulatch cleared
     nes->ppuscroll = 0;
@@ -341,21 +341,28 @@ uint8_t step_cpu(struct Nes* nes) {
     return cycles;
 }
 
-void step_ppu(struct Nes* nes, uint8_t cycles) {
+uint8_t step_ppu(struct Nes* nes, uint8_t cycles) {
     // advance cycle
-    uint16_t old_cycle = nes->cycle;
+    uint32_t old_cycle = nes->cycle;
     nes->cycle += cycles;
+    uint8_t vblank_flag = 0;
 
     // vblank occur scanline 241 cycle 1
-    if (old_cycle < 82182 && nes->cycle >= 82182) {
-        nes->nmi = 1;
-        nes->ppustatus &= 0x80; // set vblank flag
+    if (old_cycle <= 82182 && nes->cycle > 82182) {
+        vblank_flag = 1;
+        if (nes->ppuctrl & 0x80) {
+            nes->nmi = 1;
+        }
+        printf("PPU: vblank (%i..%i) [nmi = %i, ppuctrl = 0x%02X]\n", old_cycle, nes->cycle, nes->nmi, nes->ppuctrl);
+        nes->ppustatus |= 0x80; // set vblank flag
     }
 
     // vblank ends scanline 260, cycle 340
     if (nes->cycle >= 89342) {
         nes->cycle -= 89342;
     }
+
+    return vblank_flag;
 }
 
 void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {

@@ -1,4 +1,5 @@
 #include "nes.h"
+#include <stdio.h>
 
 void adc(struct Nes* nes) {
     uint8_t val = cpu_bus_read(nes, nes->micro_addr);
@@ -217,9 +218,8 @@ void inc(struct Nes* nes) {
 
 void jmp(struct Nes* nes) {
     nes->pc = nes->micro_addr;
+    if (nes->pc !=  0xC7E1) printf("jmp to 0x%04X\n", nes->pc);
 }
-
-#include <stdio.h>
 
 void jsr(struct Nes* nes) {
     uint16_t addr = nes->pc - 1; //
@@ -228,6 +228,7 @@ void jsr(struct Nes* nes) {
     cpu_bus_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
     nes->sp -= 1;
     nes->pc = nes->micro_addr;
+    if (nes->pc != 0xF4ED) printf("jsr to 0x%04X\n", nes->pc);
 }
 
 void lda(struct Nes* nes) {
@@ -392,6 +393,7 @@ void rti(struct Nes* nes) {
     nes->sp += 1;
     uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo);
+    printf("rti to 0x%04X\n", nes->pc);
 }
 
 void rts(struct Nes* nes) {
@@ -400,6 +402,7 @@ void rts(struct Nes* nes) {
     nes->sp += 1;
     uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo) + 1; // +1 ?
+    if (nes->pc != 0xC7E4) printf("rts to 0x%04X\n", nes->pc);
 }
 
 void sbc(struct Nes* nes) {

@@ -76,7 +76,8 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 	uint32_t prg_rom_size = header[4] * 0x4000;
 	uint32_t chr_rom_size = header[5] * 0x2000;
 	uint8_t mapper = (header[7] & 0x11110000) | (header[6] >> 4);
-	printf("  Header info:\n    mapper: %i\n    prg size: 0x%X\n    chr size: 0x%X\n", mapper, prg_rom_size, chr_rom_size);
+	uint8_t mirroring = header[6] & 0b1;
+	printf("  Header info:\n    mapper: %i\n    prg size: 0x%X\n    chr size: 0x%X\n    mirroring: %i (0 = horizontal, 1 = vertical)\n", mapper, prg_rom_size, chr_rom_size, mirroring);
 
 	// create mapper
 	switch (mapper) {
@@ -96,6 +97,7 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
 			memcpy(&mapper0->chr_rom, data + prg_rom_size, chr_rom_size);
 			// set mirroring
 			mapper0->mask = prg_rom_size - 1;
+			mapper0->mirroring = mirroring;
 			// initialize cartridge
 			cartridge->data = mapper0;
 			cartridge->prg_read = (void*)mapper0_prg_read;

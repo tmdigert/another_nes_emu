@@ -1,6 +1,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_surface.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "nes.h"
 
@@ -67,6 +69,87 @@ char* lookup_opcode(uint8_t op) {
     }
 }
 
+void fill_nametable(struct Nes* nes, uint8_t* pixels) {
+    printf("start nametable fill\n");
+    fflush(stdout);
+
+    // constants
+    uint16_t nametable_width = 32; // in tiles
+    uint16_t nametable_height = 30; // in tiles
+    uint16_t tile_size = 8; // in pixels
+
+    // palettes
+    uint8_t bg_palette[4][4];
+    bg_palette[0][0] = ppu_bus_read(nes, 0x3F01);
+    bg_palette[0][1] = ppu_bus_read(nes, 0x3F02);
+    bg_palette[0][2] = ppu_bus_read(nes, 0x3F03);
+    bg_palette[0][2] = ppu_bus_read(nes, 0x3F00);
+    bg_palette[1][0] = ppu_bus_read(nes, 0x3F05);
+    bg_palette[1][1] = ppu_bus_read(nes, 0x3F06);
+    bg_palette[1][2] = ppu_bus_read(nes, 0x3F07);
+    bg_palette[1][2] = ppu_bus_read(nes, 0x3F00);
+    bg_palette[2][0] = ppu_bus_read(nes, 0x3F09);
+    bg_palette[2][1] = ppu_bus_read(nes, 0x3F0A);
+    bg_palette[2][2] = ppu_bus_read(nes, 0x3F0B);
+    bg_palette[2][2] = ppu_bus_read(nes, 0x3F00);
+    bg_palette[3][0] = ppu_bus_read(nes, 0x3F0D);
+    bg_palette[3][1] = ppu_bus_read(nes, 0x3F0E);
+    bg_palette[3][2] = ppu_bus_read(nes, 0x3F0F);
+    bg_palette[3][2] = ppu_bus_read(nes, 0x3F00);
+
+    // pattern = 24, attribute = 00
+    // pattern 024y
+
+    for (int nametable = 0; nametable < 4; nametable += 1) {
+        uint16_t nametable_base = 0x2000 | (0x400 * nametable);
+        uint16_t attribute_base = nametable_base | 0x3C0;
+
+        // loop through each 8x8 tile (32 by 30 iterations)
+        for (uint8_t tile8_y = 0; tile8_y < nametable_height; tile8_y++) {
+            for (uint8_t tile8_x = 0; tile8_x < nametable_width; tile8_x++) {
+                uint16_t nametable_index = tile8_x + tile8_y * nametable_width;
+                uint16_t attribute_index = tile8_x / 4 + tile8_y / 4 * nametable_width / 4;
+
+                // data from nametable/attribute tables
+                uint8_t nametable_data = ppu_bus_read(nes, nametable_base | nametable_index);
+                uint8_t attribute_data = 0;//ppu_bus_read(nes, attribute_base + attribute_index);
+
+                // form patterntable base
+                uint16_t pattern_table_base = nametable_data << 4 | ((nes->ppuctrl << 8) & 0b1000000000000); 
+
+                // form palette id
+                uint8_t x_sub_tile = tile8_x % 2;
+                uint8_t y_sub_tile = tile8_y % 2;
+                uint8_t palette_id = (attribute_data >> (x_sub_tile * 2 + y_sub_tile * 4)) & 0b11;
+
+                // loop through each pixel (8 by 8 iterations)
+                for (uint8_t bit_plane = 0; bit_plane < tile_size; bit_plane++) {
+                    // load the bit plane
+                    uint8_t low_bits = ppu_bus_read(nes, pattern_table_base | bit_plane); // low bits for 8 pixels
+                    uint8_t high_bits = ppu_bus_read(nes, pattern_table_base | tile_size | bit_plane); // high bits for 8 pixels
+
+                    // for each pixel in plane
+                    for (uint8_t pixel_index = 0; pixel_index < tile_size; pixel_index++) {
+                        // extract rightmost pixel from the two bit planes above
+                        uint8_t pixel = (low_bits % 2) << 1 | (high_bits % 2);
+                        low_bits >>= 1;
+                        high_bits >>= 1;
+
+                        // find where this pixel is even suppose to go
+                        uint16_t pixel_x = (tile_size - 1 - pixel_index) + tile_size * tile8_x + tile_size * nametable_width * (nametable % 2);
+                        uint16_t pixel_y = tile_size * nametable_height * (nametable / 2) + tile_size * tile8_y + bit_plane;
+                        uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
+                        pixels[index] = pixel;
+                    }
+                }
+            }
+        } 
+    }
+}
+
+#include <assert.h>
+
+
 int main(int argc, char* argv[]) {
     // load ROM
     struct Cartridge cartridge;
@@ -79,21 +162,57 @@ int main(int argc, char* argv[]) {
     struct Nes nes;
     init_nes(&nes, cartridge);
 
-    // until vblank
-
-    // do
+    // run n vblanks of rom
     int acc_cycle = 0;
-    for (int i = 0; ; i++) {
+    int vblanks = 0;
+    while (vblanks < 15) {
         int cycle = step_cpu(&nes);
-        step_ppu(&nes, cycle);
-
-        /*
-        uint8_t next = cpu_bus_read(&nes, nes.pc);
-        printf("cycle: %8i, pc: 0x%04X, A/X/Y: $%02X/$%02X/$%02X, sp: $%02X, status: $%02X, next op: 0x%02X (%s)\n", cycle, nes.pc, nes.acc, nes.x, nes.y, nes.sp, nes.status, next, lookup_opcode(next));
-        */        
-
+        vblanks += step_ppu(&nes, cycle);
         acc_cycle += cycle;
     }
+
+    //      uint8_t next = cpu_bus_read(&nes, nes.pc);
+    //      printf("cycle: %8i, pc: 0x%04X, A/X/Y: $%02X/$%02X/$%02X, sp: $%02X, status: $%02X, next op: 0x%02X (%s)\n", cycle, nes.pc, nes.acc, nes.x, nes.y, nes.sp, nes.status, next, lookup_opcode(next));
+    //      fflush(stdout);
+
+    /////////////////////
+    // render nametable test
+    uint32_t pixelc = (32 * 8 * 2) * (30 * 8 * 2);
+    uint8_t* pixels = malloc(pixelc * 3);
+    uint8_t* nes_pixels = malloc(pixelc);
+    memset(nes_pixels, 0, pixelc);
+    uint8_t lookup[] = {
+        84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0,
+        152, 150, 152, 8, 76, 196, 48, 50, 236, 92, 30, 228, 136, 20, 176, 160, 20, 100, 152, 34, 32, 120, 60, 0, 84, 90, 0, 40, 114, 0, 8, 124, 0, 0, 118, 40, 0, 102, 120, 0, 0, 0,
+        236, 238, 236, 76, 154, 236, 120, 124, 236, 176, 98, 236, 228, 84, 236, 236, 88, 180, 236, 106, 100, 212, 136, 32, 160, 170, 0, 116, 196, 0, 76, 208, 32, 56, 204, 108, 56, 180, 204, 60, 60, 60,
+        236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160
+    };
+    fill_nametable(&nes, nes_pixels);
+    for (int i = 0; i < 245760; i++) {
+        uint8_t nes_pixel = nes_pixels[i] & 0x3F;
+        pixels[i * 3 + 0] = lookup[nes_pixel * 3 + 0];
+        pixels[i * 3 + 1] = lookup[nes_pixel * 3 + 1];
+        pixels[i * 3 + 2] = lookup[nes_pixel * 3 + 2];
+    }
+
+    assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 512, 480, 0);
+    assert(window);
+    SDL_Surface* screen = SDL_GetWindowSurface(window);
+    assert(screen);
+    SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, 512, 480, 24, 512 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
+    assert(surface);
+    SDL_BlitSurface(surface, 0, screen, 0);
+    SDL_UpdateWindowSurface(window);
+    fflush(stdout);
+    printf("PPUSCROLL = 0x%04X\n", nes.ppuscroll);
+    system("PAUSE");
+    SDL_FreeSurface(surface);
+    SDL_FreeSurface(screen);
+    SDL_DestroyWindow(window);
+    free(pixels);
+    free(nes_pixels);
+    /////////////////////
 
     // free nes
     free_nes(&nes);
