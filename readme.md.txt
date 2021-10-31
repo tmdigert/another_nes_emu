@@ -1,1 +1,0 @@
-Welcome to <unnamed NES emulator>! Please enjoy your stay!
