@@ -64,7 +64,6 @@ uint8_t ppu_bus_read(struct Nes*, uint16_t);
 void ppu_bus_write(struct Nes*, uint16_t, uint8_t);
 
 // addressing modes (https://wiki.nesdev.org/w/index.php/CPU_addressing_modes)
-void    addrm_imp(struct Nes*); // ex. ROL A
 void    addrm_imm(struct Nes*); // ex. LDA #$32
 void    addrm_zp(struct Nes*);  // ex. LDA $32
 void    addrm_zpx(struct Nes*); // ex. LDA $32, X

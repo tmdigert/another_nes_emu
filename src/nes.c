@@ -7,6 +7,15 @@ uint16_t make_u16(uint8_t hi, uint8_t lo) {
     return ((uint16_t)hi << 8) | (uint16_t)lo;
 }
 
+void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
+    nes->status &= ~(1 << n); // clear nth bit
+    nes->status |= val << n; // set nth bit to val
+}
+
+uint8_t get_flag(struct Nes* nes, uint8_t n) {
+    return (nes->status >> n) & 0x01;
+}
+
 void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     // cartridge
     nes->cartridge = cartridge;
@@ -40,11 +49,3 @@ void reset(struct Nes* nes) {
     nes->reset = 1;
 }
 
-void set_flag(struct Nes* nes, uint8_t n, uint8_t val) {
-    nes->status &= ~(1 << n); // clear nth bit
-    nes->status |= val << n; // set nth bit to val
-}
-
-uint8_t get_flag(struct Nes* nes, uint8_t n) {
-    return (nes->status >> n) & 0x01;
-}
