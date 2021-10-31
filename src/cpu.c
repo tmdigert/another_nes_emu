@@ -50,10 +50,10 @@ uint8_t step_cpu(struct Nes* nes) {
     uint8_t op = cpu_bus_read(nes, nes->pc);
     nes->pc += 1;
 
-    //
-    uint8_t cycles = 0xFF; //
-    uint8_t oops = 0x00;
-    uint8_t branch = 0x00;
+    // Big lookup table for parsing op
+    uint8_t cycles = 0xFF; // initialization doesn't matter. Still, no opcode can take 255 cycles
+    uint8_t oops = 0x00; // cycles to add due to a 16 bit boundary cross
+    uint8_t branch = 0x00; // cycles to add due to a branch instruction
     switch (op) {
         // adc
         case 0x69: cycles = (addrm_imm(nes), adc(nes), 2); break;
