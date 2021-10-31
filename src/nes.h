@@ -28,7 +28,7 @@ struct Nes {
     uint16_t micro_addr;
 
     // PPU
-    uint8_t vram[0x0800];
+    uint8_t ciram[0x0800];
     uint8_t oam[0xFF];
     uint8_t palette[0x20];
     uint32_t cycle;

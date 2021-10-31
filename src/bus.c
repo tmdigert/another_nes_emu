@@ -14,7 +14,6 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     	switch (0x2000 | (addr & 0b111)) {
     		case 0x2002: {
     			uint8_t out = nes->ppustatus;
-    			//printf("cpu_bus_read(addr = 0x%04X) = 0x%02X [pc = 0x%04X]\n", addr, out, nes->pc);
     			nes->ppustatus &= 0x7F;
     			return out;
     		} break;
@@ -53,7 +52,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 		// TODO: most of these are probably wrong
 		switch (0x2000 | (addr & 0b111)) {
 			case 0x2000: {
-				printf("cpu_bus_write(addr = 0x%04X, byte = 0x%02X) [pc = 0x%04X]\n", addr, byte, nes->pc);
 				nes->ppuctrl |= byte;
 			} break;
 			case 0x2001: {
@@ -104,28 +102,30 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
 		return cartridge_chr_read(&nes->cartridge, addr);
 	}
 
-	// vram [0x2000, 0x3EFF]
+	// ciram [0x2000, 0x3EFF]
 	if (addr <= 0x3EFF) {
 		// clip to 0x2000
 		addr = 0x2000 | (addr & 0xFFF);
 
-		// assume horizontal mirroring
-		// section A
+		// TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
 		if (addr < 0x2400) {
-			return nes->vram[addr - 0x2000];
+			return nes->ciram[addr - 0x2000];
 		}
 		// in section B
 		if (addr < 0x2800) {
-			return nes->vram[addr - 0x2400];
+			return nes->ciram[addr - 0x2400];
 		}
 		// in section C
 		if (addr < 0x2C00) {
-			return nes->vram[addr - 0x2400];
+			return nes->ciram[addr - 0x2400];
 		}
 		// in section D
 		if (addr < 0x3000) {
-			return nes->vram[addr - 0x2800];
+			return nes->ciram[addr - 0x2800];
 		}
+
+		// unreachable?
+		assert(0);
 	}
 
 	// palette [0x3F00, 0x3FFF]
@@ -144,21 +144,34 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 		//return cartridge_chr_read(&nes->cartridge, addr);
 	}
 
-	// vram [0x2000, 0x3EFF]
+	// ciram [0x2000, 0x3EFF]
 	if (addr <= 0x3EFF) {
-		// apparently, routing of this is not so trivial
-		//printf("ppu_bus_write(addr = 0x%04X, byte = 0x%02X)\n", addr, byte);
+		// clip to 0x2000
+		addr = 0x2000 | (addr & 0xFFF);
 
-		// assume horizontal mirroring
+		// TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
+		if (addr < 0x2400) {
+			nes->ciram[addr - 0x2000] = byte;
+			return;
+		}
+		// in section B
 		if (addr < 0x2800) {
-			nes->vram[(addr - 0x2000) & 0x3FF] = byte;
+			nes->ciram[addr - 0x2400] = byte;
 			return;
 		}
+		// in section C
+		if (addr < 0x2C00) {
+			nes->ciram[addr - 0x2400] = byte;
+			return;
+		}
+		// in section D
 		if (addr < 0x3000) {
-			nes->vram[(addr - 0x2800) & 0x03FF + 0x0400] = byte;
+			nes->ciram[addr - 0x2800] = byte;
 			return;
 		}
-		return;
+
+		// unreachable?
+		assert(0);
 	}
 
 	// palette [0x3F00, 0x3FFF]
@@ -170,6 +183,3 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 	// nothing exists beyond 0x3FFF
 	return;
 }
-
-// 10110000000000 AND 10100000000000
-// 10000000000000 AND 10010000000000
