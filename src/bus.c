@@ -192,7 +192,12 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 nes->tri_len = (nes->ram[addr] >> 3);
                 nes->tri_timer_hi = (nes->ram[addr) >>3;
         }
-
+        if(addr == 0x4015){
+	        nes->enb_pulse1 = (nes-ram[addr] << 7 ) >> 7;
+	        nes->enb_pulse2 = (nes-ram[addr] << 6 ) >> 7;
+	        nes->enb_try = (nes-ram[addr] << 5 ) >> 7;
+                return;
+       }
     // normally disabled, don't implement
     if (addr <= 0x401F) {
         return;
