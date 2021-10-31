@@ -7,6 +7,7 @@
 struct Mapper0 {
 	uint8_t prg_rom[0x8000];
 	uint16_t mask; // for mirroring
+	uint8_t mirroring; // 0 = horizontal, 1 = vertical
 	uint8_t chr_rom[0x2000];
 };
 
