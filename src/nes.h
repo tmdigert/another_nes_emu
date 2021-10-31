@@ -38,6 +38,70 @@ struct Nes {
     uint8_t oamaddr; // ppu register @ 0x2003
     uint16_t ppuscroll; // ppu register @ 0x2005
     uint16_t ppuaddr; // ppu register @ 0x2006
+    
+     //APU
+    uint8_t apu_read; //set if system needs to update sound
+
+    //Pulse1
+    uint8_t pulse1_duty;
+    uint8_t pulse1_env;
+    uint8_t pulse1_vol;
+    uint8_t pulse1_vol_env;
+    uint8_t pulse1_sweep;
+    uint8_t pulse1_period;
+    uint8_t pulse1_negate;
+    uint8_t pulse1_shift;
+    uint8_t pulse1_timer;
+    uint8_t pulse1_len;
+    uint8_t pulse1_timer_hi;
+
+    //Pulse2
+    uint8_t pulse2_duty;
+    uint8_t pulse2_env;
+    uint8_t pulse2_vol;
+    uint8_t pulse2_vol_env;
+    uint8_t pulse2_sweep;
+    uint8_t pulse2_period;
+    uint8_t pulse2_negate;
+    uint8_t pulse2_shift;
+    uint8_t pulse2_timer;
+    uint8_t pulse2_len;
+    uint8_t pulse2_timer_hi;
+
+    //Triangle
+    uint8_t tri_lin;
+    uint8_t tri_load;
+    uint8_t tri_timer;
+    uint8_t tri_len;
+    uint8_t tri_timer_hi;
+
+    //noise
+    uint8_t noise_env;
+    uint8_t noise_vol;
+    uint8_t noise_vol_env;
+    uint8_t noise_loop;
+    uint8_t noise_period;
+    uint8_t noise_load;
+
+    //DMC
+    uint8_t dmc_irq;
+    uint8_t dmc_loop;
+    uint8_t dmc_freq;
+    uint8_t dmc_counter;
+    uint8_t dmc_addr;
+    uint8_t dmc_len;
+
+    //status
+    uint8_t enb_dmc;
+    uint8_t enb_noise;
+    uint8_t enb_tri;
+    uint8_t enb_pulse1;
+    uint8_t enb_pulse2;
+
+    uint8_t intr_noise;
+    uint8_t intr_tri;
+    uint8_t intr_pulse1;
+    uint8_t intr_pulse2;
 };
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
