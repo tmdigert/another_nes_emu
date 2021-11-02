@@ -82,34 +82,34 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
 
     // palettes
     uint8_t bg_palette[4][4];
-    bg_palette[0][0] = ppu_bus_read(nes, 0x3F00); // 0x0F
-    bg_palette[0][1] = ppu_bus_read(nes, 0x3F01); // 0x2C
-    bg_palette[0][2] = ppu_bus_read(nes, 0x3F02); // 0x38
-    bg_palette[0][3] = ppu_bus_read(nes, 0x3F03); // 0x12
+    bg_palette[0][0] = ppu_bus_read(nes, 0x3F00);
+    bg_palette[0][1] = ppu_bus_read(nes, 0x3F01);
+    bg_palette[0][2] = ppu_bus_read(nes, 0x3F02);
+    bg_palette[0][3] = ppu_bus_read(nes, 0x3F03);
     //assert(bg_palette[0][0] == 0x0F);
     //assert(bg_palette[0][1] == 0x15);
     //assert(bg_palette[0][2] == 0x2C);
     //assert(bg_palette[0][3] == 0x12);
 
-    bg_palette[1][0] = ppu_bus_read(nes, 0x3F04); // 0x0F
-    bg_palette[1][1] = ppu_bus_read(nes, 0x3F05); // 0x27
-    bg_palette[1][2] = ppu_bus_read(nes, 0x3F06); // 0x27
-    bg_palette[1][3] = ppu_bus_read(nes, 0x3F07); // 0x27
+    bg_palette[1][0] = ppu_bus_read(nes, 0x3F04);
+    bg_palette[1][1] = ppu_bus_read(nes, 0x3F05);
+    bg_palette[1][2] = ppu_bus_read(nes, 0x3F06);
+    bg_palette[1][3] = ppu_bus_read(nes, 0x3F07);
     //assert(bg_palette[1][0] == 0x0F);
     //assert(bg_palette[1][1] == 0x27);
     //assert(bg_palette[1][2] == 0x02);
     //assert(bg_palette[1][3] == 0x17);
 
-    bg_palette[2][0] = ppu_bus_read(nes, 0x3F08); // 0x0F
-    bg_palette[2][1] = ppu_bus_read(nes, 0x3F09); // 0x30
-    bg_palette[2][2] = ppu_bus_read(nes, 0x3F0A); // 0x30
-    bg_palette[2][3] = ppu_bus_read(nes, 0x3F0B); // 0x30
+    bg_palette[2][0] = ppu_bus_read(nes, 0x3F08);
+    bg_palette[2][1] = ppu_bus_read(nes, 0x3F09);
+    bg_palette[2][2] = ppu_bus_read(nes, 0x3F0A);
+    bg_palette[2][3] = ppu_bus_read(nes, 0x3F0B);
     //assert(bg_palette[2][0] == 0x0F);
     //assert(bg_palette[2][1] == 0x30);
     //assert(bg_palette[2][2] == 0x36);
     //assert(bg_palette[2][3] == 0x06);
 
-    bg_palette[3][0] = ppu_bus_read(nes, 0x3F0C); // 0x0F
+    bg_palette[3][0] = ppu_bus_read(nes, 0x3F0C);
     bg_palette[3][1] = ppu_bus_read(nes, 0x3F0D);
     bg_palette[3][2] = ppu_bus_read(nes, 0x3F0E);
     bg_palette[3][3] = ppu_bus_read(nes, 0x3F0F);
@@ -130,26 +130,23 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
         // loop through each 8x8 tile (32 by 30 iterations)
         for (uint8_t tile8_y = 0; tile8_y < nametable_height; tile8_y++) {
             for (uint8_t tile8_x = 0; tile8_x < nametable_width; tile8_x++) {
-                if (tile8_x == 32 && tile8_y == 30) {
-                    return;
-                }
 
                 uint16_t nametable_index = tile8_x + tile8_y * nametable_width;
                 uint16_t attribute_index = tile8_x / 4 + tile8_y / 4 * nametable_width / 4;
 
                 // data from nametable/attribute tables
-                uint8_t nametable_data = ppu_bus_read(nes, nametable_base | nametable_index);
-                uint8_t attribute_data = ppu_bus_read(nes, attribute_base | attribute_index);
+                uint8_t nametable_data = ppu_bus_read(nes, nametable_base + nametable_index);
+                uint8_t attribute_data = ppu_bus_read(nes, attribute_base + attribute_index);
                 // attribute_data = 00 10 01 00
-                printf("attribute data for (%i, %i): 0x%02X\n", tile8_x, tile8_y, attribute_data);
+                //printf("attribute data for (%i, %i): 0x%02X\n", tile8_x, tile8_y, attribute_data);
 
                 // form patterntable base
                 uint16_t pattern_table_base = nametable_data << 4 | nes->ppuctrl << 8 & 0b1000000000000; 
 
                 // form palette id
-                uint8_t x_sub_tile = tile8_x/2 % 2;
-                uint8_t y_sub_tile = tile8_y/2 % 2;
-                uint8_t palette_id = attribute_data >> x_sub_tile * 2 + y_sub_tile * 4 & 0b11;
+                uint8_t x_sub_tile = (tile8_x/2) % 2;
+                uint8_t y_sub_tile = (tile8_y/2) % 2;
+                uint8_t palette_id = (attribute_data >> x_sub_tile * 2 + y_sub_tile * 4) & 0b11;
 
                 // loop through each pixel (8 by 8 iterations)
                 for (uint8_t bit_plane = 0; bit_plane < tile_size; bit_plane++) {
@@ -160,7 +157,7 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     // for each pixel in plane
                     for (uint8_t pixel_index = 0; pixel_index < tile_size; pixel_index++) {
                         // extract rightmost pixel from the two bit planes above
-                        uint8_t pixel = low_bits % 2 << 1 | high_bits % 2;
+                        uint8_t pixel = high_bits % 2 << 1 | low_bits % 2;
                         low_bits >>= 1;
                         high_bits >>= 1;
 
