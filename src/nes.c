@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include "nes.h"
 
@@ -21,6 +22,7 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->cartridge = cartridge;
 
     // https://wiki.nesdev.org/w/index.php/CPU_power_up_state
+    memset(nes->ram, 0, 0x800); 
     nes->acc = 0;
     nes->x = 0;
     nes->y = 0;
@@ -31,7 +33,12 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->nmi = 0;
 
     // https://wiki.nesdev.org/w/index.php/PPU_power_up_state
+    memset(nes->ciram, 0, 0x800);
+    memset(nes->oam, 0, 0xFF);
+    memset(nes->palette, 0, 0x20);
     nes->cycle = 0;
+    nes->ppuaddr_latch = 0;
+    nes->ppuscroll_latch = 0;
     nes->ppuctrl = 0;
     nes->ppumask = 0;
     nes->ppustatus = 0b00000000; // 1010_0000

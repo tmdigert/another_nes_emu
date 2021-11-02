@@ -319,7 +319,7 @@ void addrm_zpx(struct Nes* nes) {
     // read operand (zp address)
     uint8_t addr = cpu_bus_read(nes, nes->pc);
     nes->pc += 1;
-    // inc zp address (by y)
+    // inc zp address (by x)
     addr += nes->x;
     // store internal address
     nes->micro_addr = (uint16_t)addr;
@@ -335,6 +335,7 @@ void addrm_zpy(struct Nes* nes) {
     nes->micro_addr = (uint16_t)addr;
 }
 
+// LDA ($00, X)
 void addrm_inx(struct Nes* nes) {
     // read operand (zp address)
     uint8_t addr = cpu_bus_read(nes, nes->pc);
@@ -348,6 +349,7 @@ void addrm_inx(struct Nes* nes) {
     nes->micro_addr = make_u16(hi, lo);
 }
 
+// LDA ($00),Y
 uint8_t addrm_iny(struct Nes* nes) {
     // read operand (zp address) 
     uint8_t addr = cpu_bus_read(nes, nes->pc);
