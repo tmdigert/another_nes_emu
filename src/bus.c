@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
+
 #include "nes.h"
+#include "error.h"
 
 uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     // ram [0x0000, 0x1FFF]
@@ -24,7 +26,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
                 return out;
             } break;
             default: {
-                printf("Unimplemented CPU bus read: 0x%04X\n at 0x%04X\n", addr, nes->pc);
+                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
                 assert(0);
             } break;
         }
@@ -79,7 +81,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
             } break;
             default: {
-                printf("Unimplemented CPU bus write: 0x%04X at 0x%04X with value 0x%02X\n", addr, nes->pc, byte);
+                error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
                 assert(0);
             } break;
         }
@@ -103,6 +105,9 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 }
 
 uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
+    // ppu addresses above 0x3FFF are mirrored
+    addr &= 0x3FFF;
+
     // chr rom [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
         return cartridge_chr_read(&nes->cartridge, addr);
@@ -130,7 +135,8 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
             return nes->ciram[addr - 0x2800];
         }
 
-        // unreachable?
+        // unreachable, abort
+        error(UNREACHABLE, "This line should not be reachable");
         assert(0);
     }
 
@@ -140,11 +146,15 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
         else return nes->palette[addr & 0x1F];
     }
 
-    // nothing exists beyond 0x3FFF
+    // unreachable, abort
+    error(UNREACHABLE, "This line should not be reachable");
     assert(0);
 }
 
 void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
+    // ppu addresses above 0x3FFF are mirrored
+    addr &= 0x3FFF;
+
     // chr rom [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
         return; // TODO: some cartridges do have writable chr
@@ -156,9 +166,6 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         // clip to 0x2000
         addr = 0x2000 | addr & 0xFFF;
 
-        if (addr >= 0x23C0 && addr < 0x2400) {
-            //printf("ppu_bus_write: 0x%04X (pc: 0x%04X) with value 0x%02X\n", addr, nes->pc, byte);
-        }
         // TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
         if (addr < 0x2400) {
             nes->ciram[addr - 0x2000] = byte;
@@ -180,18 +187,20 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             return;
         }
 
-        // unreachable?
+        // unreachable, abort
+        error(UNREACHABLE, "This line should not be reachable");
         assert(0);
     }
 
     // palette [0x3F00, 0x3FFF]
     if (addr <= 0x3FFF) {
-        //printf("ppu_bus_write: 0x%04X (pc: 0x%04X) with value 0x%02X\n", addr, nes->pc, byte);
+        //nlog("ppu_bus_write: 0x%04X (pc: 0x%04X) with value 0x%02X", addr, nes->pc, byte);
         if (addr % 4 == 0) nes->palette[0] = byte;
         else nes->palette[addr & 0x1F] = byte;
         return;
     }
 
-    // nothing exists beyond 0x3FFF
+    // unreachable, abort
+    error(UNREACHABLE, "This line should not be reachable");
     assert(0);
 }

@@ -1,6 +1,8 @@
-#include "nes.h"
 #include <stdio.h>
 #include <assert.h>
+
+#include "nes.h"
+#include "error.h"
 
 uint8_t step_cpu(struct Nes* nes) {
     // perform reset if necessary
@@ -294,7 +296,7 @@ uint8_t step_cpu(struct Nes* nes) {
 
         default:
         // unhandled opcode error
-        printf("INVALID OPCODE %02X\n", op);
+        nlog("INVALID OPCODE %02X", op);
         fflush(stdout);
         assert(0);
         break;
@@ -648,7 +650,7 @@ void inc(struct Nes* nes) {
 
 void jmp(struct Nes* nes) {
     nes->pc = nes->micro_addr;
-    if (nes->pc !=  0xC7E1) printf("jmp to 0x%04X\n", nes->pc);
+    if (nes->pc !=  0xC7E1) nlog("jmp to 0x%04X", nes->pc);
 }
 
 void jsr(struct Nes* nes) {
@@ -658,7 +660,7 @@ void jsr(struct Nes* nes) {
     cpu_bus_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
     nes->sp -= 1;
     nes->pc = nes->micro_addr;
-    if (nes->pc != 0xF4ED) printf("jsr to 0x%04X\n", nes->pc);
+    if (nes->pc != 0xF4ED) nlog("jsr to 0x%04X", nes->pc);
 }
 
 void lda(struct Nes* nes) {
@@ -813,8 +815,6 @@ void ror_imp(struct Nes* nes) {
     set_flag(nes, STATUS_FLAG_CARRY, bit0);
 }
 
-// is:          10000111
-// should be:   10100111
 void rti(struct Nes* nes) {
     nes->sp += 1;
     nes->status = cpu_bus_read(nes, 0x0100 | nes->sp) | 0b00100000;
@@ -823,7 +823,6 @@ void rti(struct Nes* nes) {
     nes->sp += 1;
     uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo);
-    printf("rti to 0x%04X\n", nes->pc);
 }
 
 void rts(struct Nes* nes) {
@@ -832,7 +831,6 @@ void rts(struct Nes* nes) {
     nes->sp += 1;
     uint8_t hi = cpu_bus_read(nes, 0x0100 | nes->sp);
     nes->pc = make_u16(hi, lo) + 1; // +1 ?
-    if (nes->pc != 0xC7E4) printf("rts to 0x%04X\n", nes->pc);
 }
 
 void sbc(struct Nes* nes) {
