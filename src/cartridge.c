@@ -9,6 +9,11 @@
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
 
+/* load_cartridge_from_file
+Loads an NES cartridge from file based on a specified filename.
+Param 1 - The null terminated file name
+Param 2 - Output; Cartridge pointer to push output to
+*/
 int load_cartridge_from_file(char* filename, struct Cartridge* cartridge) {
     int err = 0;
     uint8_t header[16] = { 0 };
@@ -22,7 +27,7 @@ int load_cartridge_from_file(char* filename, struct Cartridge* cartridge) {
     // open filename as readonly binary
     fp = fopen(filename, "rb");
     if (fp == NULL) {
-        err = error(IO_ERROR, "Could not open file \"%s\"", filename);
+        err = error(IO_ERROR, "Could not open file \"%.32s\"", filename);
         goto close;
     }
 
@@ -42,7 +47,8 @@ int load_cartridge_from_file(char* filename, struct Cartridge* cartridge) {
     fread(header, 1, 16, fp);
     fread(data, 1, size - 16, fp);
 
-    nlog("ROM file successfully loaded\n  Filename: %s\n  size: %i", filename, size - 16);
+    // log file load success
+    nlog("ROM file successfully loaded\n  Filename: %.32s\n  size: %i", filename, size - 16);
 
     // init cartridge from data parts
     err = load_cartridge_from_data(header, data, cartridge);
@@ -55,6 +61,12 @@ close:
     return err;
 }
 
+/* load_cartridge_from_data
+Loads an NES cartridge from a header and ROM data.
+Param 1 - The 16 byte NES header
+Param 2 - ROM data. PRG ROM data first, followed by CHR ROM data.
+Param 3 - Output; Cartridge pointer to push output to
+*/
 int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge* cartridge) {
     int err = 0;
     
@@ -72,7 +84,7 @@ int load_cartridge_from_data(uint8_t header[16], uint8_t* data, struct Cartridge
     uint8_t mapper = (header[7] & 0x11110000) | (header[6] >> 4); // mapper byte ID
     uint8_t mirroring = header[6] & 0b1; // ciram mirroring mode
 
-    // nlog rom data
+    // log rom interpretation success
     nlog("ROM parsed\n  Header info:\n    mapper: %i\n    prg size: 0x%X\n    chr size: 0x%X\n    mirroring: %i (0 = horizontal, 1 = vertical)", mapper, prg_rom_size, chr_rom_size, mirroring);
 
     // create mapper (for now, only mapper0 is supported)

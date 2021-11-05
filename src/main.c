@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
     // run n vblanks of rom
     int acc_cycle = 7;
     int vblanks = 0;
-    while (vblanks < 4) {
+    while (vblanks < 5) {
         uint8_t next = cpu_bus_read(&nes, nes.pc);
         //nlog("%6i  %04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X             CYC:%i\n", i, nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp, acc_cycle);
 
