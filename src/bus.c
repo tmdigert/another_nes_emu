@@ -308,3 +308,5 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     error(UNREACHABLE, "This line should not be reachable");
     assert(0);
 }
+
+
