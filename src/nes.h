@@ -32,6 +32,8 @@ struct Nes {
     uint8_t oam[0xFF];
     uint8_t palette[0x20];
     uint32_t cycle;
+    uint8_t ppuaddr_latch;
+    uint8_t ppuscroll_latch;
     uint8_t ppuctrl; // ppu register @ 0x2000
     uint8_t ppumask; // ppu register @ 0x2001
     uint8_t ppustatus; // ppu register @ 0x2002
