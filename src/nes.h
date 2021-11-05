@@ -26,6 +26,21 @@ struct Nes {
     uint8_t nmi;
     // CPU micro
     uint16_t micro_addr;
+    
+    //APU
+    uint8_t pulse_1_1;
+    uint8_t pulse_1_2;
+    uint8_t pulse_1_3;
+    uint8_t pulse_1_4;
+
+    uint8_t pulse_2_1;
+    uint8_t pulse_2_2;
+    uint8_t pulse_2_3;
+    uint8_t pulse_2_4;
+
+    uint8_t tri_1;
+    uint8_t tri_2;
+    uint8_t tri_3;
 
     // PPU
     uint8_t ciram[0x0800];
