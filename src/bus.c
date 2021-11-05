@@ -98,7 +98,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 nes->pulse1_vol_env = vol_env_val;
 		return;
         }
-
+        
         if(addr == 0x4001){
                 uint8_t sweep_val = (byte >> 7);
                 uint8_t period_val = ((byte << 1) >> 5);
@@ -119,7 +119,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         }
         if(addr == 0x4003){
                 unit8_t len_val = (byte >> 3);
-                unit8_t timer_hi_val = ((byte << 4) >> 4;
+                unit8_t timer_hi_val = (byte << 4) >> 4;
                 nes->pulse1_len = len_val;
                 nes->pulse1_timer_hi = timer_hi_val;
                 return;
@@ -144,8 +144,8 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     if(addr == 0x4004){
                 uint8_t duty_val = (nes->ram[addr] >> 6);
                 uint8_t env_val = ((nes->ram[addr]<< 2) >> 7);
-                uint8_t vol_val = (nes->ram[addr] << 3) >> 7);
-                uint8_t vol_env_val = (nes->ram[addr] << 4) >> 4);
+                uint8_t vol_val = ((nes->ram[addr] << 3) >> 7);
+                uint8_t vol_env_val = ((nes->ram[addr] << 4) >> 4);
 
                 nes->pulse1_duty = duty_val;
                 nes->pulse1_env = env_val;
@@ -157,8 +157,8 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         if(addr == 0x4005){
                 uint8_t sweep_val = (nes->ram[addr] >> 7);
                 uint8_t period_val = ((nes->ram[addr] << 1) >> 5);
-                uint8_t negate_val = (nes->ram[addr] << 4) >> 7);
-                uint8_t shift_val = (nes->ram[addr] << 4) >> 4);
+                uint8_t negate_val = ((nes->ram[addr] << 4) >> 7);
+                uint8_t shift_val = ((nes->ram[addr] << 4) >> 4);
 
                 nes->pulse2_sweep = duty_val;
                 nes->pulse2_env = env_val;
@@ -173,7 +173,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 return;
         }
         if(addr == 0x4007){
-                unit8_t len_val = (byte >> 3;
+                unit8_t len_val = byte >> 3;
                 unit8_t timer_hi_val = (byte << 4) >> 4;
                 nes->pulse2_len = len_val;
                 nes->pulse2_timer_hi = timer_hi_val;
@@ -189,8 +189,8 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 nes->tri_timer = nes->ram[addr];
         }
         if(addr == 0x400B){
-                nes->tri_len = (nes->ram[addr] >> 3);
-                nes->tri_timer_hi = (nes->ram[addr) >>3;
+                nes->tri_len = nes->ram[addr] >> 3);
+                nes->tri_timer_hi = nes->ram[addr] >>3;
         }
         if(addr == 0x4015){
 	        nes->enb_pulse1 = (nes-ram[addr] << 7 ) >> 7;
