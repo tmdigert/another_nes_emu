@@ -119,10 +119,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             case 0x4008: {
                 nes->tri_1 = byte;
             }break;
-            case 0x4009: {
-                error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
-                assert(0);
-            }break;
             case 0x400A: {
                 nes->tri_2 = byte;
             }break;
