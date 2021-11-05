@@ -1,34 +1,41 @@
 #include <assert.h>
 #include <stdio.h>
+
 #include "nes.h"
+#include "error.h"
 
 uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     // ram [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
-    	addr &= 0x07FF;
-    	return nes->ram[addr];
+        return nes->ram[addr & 0x07FF];
     }
 
     // ppu [0x2000, 0x3FFF]
     if (addr <= 0x3FFF) {
-    	switch (0x2000 | (addr & 0b111)) {
-    		case 0x2002: {
-    			uint8_t out = nes->ppustatus;
-    			nes->ppustatus &= 0x7F;
-    			return out;
-    		} break;
-    		case 0x2007: return ppu_bus_read(nes, nes->ppuaddr);
-    		default: {
-				printf("Unimplemented CPU bus read: 0x%04X\n at 0x%04X\n", addr, nes->pc);
-				assert(0);
-    		} break;
-    	}
+        switch (0x2000 | (addr & 0b111)) {
+            case 0x2002: {
+                uint8_t out = nes->ppustatus;
+                nes->ppustatus &= 0x7F;
+                nes->ppuaddr_latch = 0;
+                nes->ppuscroll_latch = 0;
+                return out;
+            } break;
+            case 0x2007: {
+                uint8_t out = ppu_bus_read(nes, nes->ppuaddr);
+                nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
+                return out;
+            } break;
+            default: {
+                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
+                assert(0);
+            } break;
+        }
     }
 
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
-    	// TODO: implement
-    	return 0;
+        // TODO: implement
+        return 0;
     }
 
     // normally disabled, don't implement
@@ -41,49 +48,50 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
 }
 
 void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
-	// ram [0x0000, 0x1FFF]
+    // ram [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
-    	nes->ram[addr & 0x07FF] = byte;
-   		return;
+        nes->ram[addr & 0x07FF] = byte;
+        return;
     }
 
     // ppu [0x2000, 0x3FFF]
-	if (addr <= 0x3FFF) {
-		// TODO: most of these are probably wrong
-		switch (0x2000 | (addr & 0b111)) {
-			case 0x2000: {
-				nes->ppuctrl |= byte;
-			} break;
-			case 0x2001: {
-				nes->ppumask |= byte;
-			} break;
-			case 0x2003: {
-				// hopefully we can ignore this for now
-			} break;
-			case 0x2005: {
-				nes->ppuscroll <<= 8;
-				nes->ppuscroll |= byte;
-			} break;
-			case 0x2006: {
-				nes->ppuaddr = (nes->ppuaddr << 8) | byte;
-				nes->ppuaddr += (nes->ppuctrl & 0b0100 > 0) * 31 + 1;
-			} break;
-			case 0x2007: {
-				ppu_bus_write(nes, nes->ppuaddr, byte); 
-				nes->ppuaddr += (nes->ppuctrl & 0b0100 > 0) * 31 + 1;
-			} break;
-			default: {
-				printf("Unimplemented CPU bus write: 0x%04X at 0x%04X with value 0x%02X\n", addr, nes->pc, byte);
-				assert(0);
-			} break;
-		}
-		return;
-	}
+    if (addr <= 0x3FFF) {
+        // TODO: most of these are probably wrong
+        switch (0x2000 | (addr & 0b111)) {
+            case 0x2000: {
+                nes->ppuctrl = byte;
+                assert((nes->ppuctrl & 0b11) == 0);
+            } break;
+            case 0x2001: {
+                nes->ppumask |= byte;
+            } break;
+            case 0x2003: {
+                // hopefully we can ignore this for now
+            } break;
+            case 0x2005: {
+                nes->ppuscroll <<= 8;
+                nes->ppuscroll |= byte;
+            } break;
+            case 0x2006: {
+                nes->ppuaddr <<= 8;
+                nes->ppuaddr |= byte;
+            } break;
+            case 0x2007: {
+                ppu_bus_write(nes, nes->ppuaddr, byte); 
+                nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
+            } break;
+            default: {
+                error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
+                assert(0);
+            } break;
+        }
+        return;
+    }
 
-	// APU and IO [0x4000, 0x4017]
+    // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
-    	// TODO: implement
-    	return;
+        // TODO: implement
+        return;
     }
 	//Pulse 1
     if(addr == 0x4000){
@@ -308,5 +316,3 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     error(UNREACHABLE, "This line should not be reachable");
     assert(0);
 }
-
-
