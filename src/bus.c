@@ -89,46 +89,46 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     }
 
     // APU and IO [0x4000, 0x4017]
-if (addr <= 0x4017) {
+    if (addr <= 0x4017) {
         // TODO: implement
-        switch(0x4000 | (addr & 0b1100)){
+        switch(0x4000){
             case 0x4000: {
                 nes->pulse_1_1 = byte;
-            }
+            }break;
             case 0x4001: {
                 nes->pulse_1_2 = byte;
-            }
+            }break;
             case 0x4002: {
                 nes->pulse_1_3 = byte;
-            }
+            }break;
             case 0x4003: {
                 nes->pulse_1_4 = byte;
-            }
+            }break;
             case 0x4004: {
                 nes->pulse_2_1 = byte;
-            }
+            }break;
             case 0x4005: {
                 nes->pulse_2_2 = byte;
-            }
+            }break;
             case 0x4006: {
                 nes->pulse_2_3 = byte;
-            }
+            }break;
             case 0x4007: {
                 nes->pulse_2_4 = byte;
-            }
+            }break;
             case 0x4008: {
                 nes->tri_1 = byte;
-            }
+            }break;
             case 0x4009: {
                 error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
                 assert(0);
-            }
+            }break;
             case 0x400A: {
                 nes->tri_2 = byte;
-            }
+            }break;
             case 0x400B: {
                 nes->tri_3 = byte;
-            }
+            }break;
             default: {
                 error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
                 assert(0);
