@@ -4,8 +4,65 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "math.h"
+
 #include "nes.h"
 #include "error.h"
+
+
+const int freq_master = 44100;
+const float duty_lookup[4] = {1.0, 0.707107, 0.9238795, -0.382683}; //duty for 50%, 25%, 12.5%, negate 25%
+
+//generate square signal
+
+int16_t* gen_square(int duty, int16_t* arr, int16_t amp, int16_t freq, int16_t len, int16_t step, int16_t sweep, int16_t envelope) { 
+	float x = 0;
+
+
+	//TODO: implement sweep and envelope
+	for(double i = 0; i < len; i += step){
+
+	    float sine_val = sin(x * freq);
+
+	    int16_t sample_val;
+
+	    if (sine_val >= duty_lookup[duty]){
+	    	sample_val = amp;
+	    }
+	    else{
+	    	sample_val = -amp;
+	    }
+	arr[i] = sample_val;
+
+	}
+
+	return arr;
+
+	}
+
+int16_t* play_triangle(int16_t* arr, int16_t freq, int16_t len, int16_t step, int16_t delta_step){
+
+	int16_t delta = 0;
+
+	for(double i = 0; i < len; i += step){
+
+	    float sine_val = sin(x * freq);
+
+	    int16_t sample_val;
+
+	    if (sine_val >= 0){
+	    	delta +=  delta_step;
+	    }
+	    else{
+	    	delta -=  delta_step;
+	    }
+	arr[i] = delta;
+
+	}
+
+	return arr;
+
+}
 
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
