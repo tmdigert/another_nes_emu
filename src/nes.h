@@ -13,6 +13,10 @@
 struct Nes {
     // Cartridge
     struct Cartridge cartridge;
+    
+    //CONTROLER
+    uint8_t joy1, joy2; //SDL interface controller values
+    uint8_t joy1sys, joy2sys; //internal controller values
 
     // CPU
     uint8_t ram[0x0800];
