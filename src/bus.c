@@ -34,7 +34,11 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
 
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
-        // TODO: implement
+        if( addr == 4016){
+            uint8_t val = (nes->joy1sys >> 7);
+            nes->joy1sys >>= 1;
+            return val;
+        }
         return 0;
     }
 
