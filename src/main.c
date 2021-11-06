@@ -201,6 +201,34 @@ int main(int argc, char* argv[]) {
     assert(surface);
     SDL_BlitSurface(surface, 0, screen, 0);
     SDL_UpdateWindowSurface(window);
+    
+    const Uint8 *keyboard = SDL_GetKeyboardState(NULL);
+    
+    if(keyboard[SDL_SCANCODE_Z]){ //a
+       nes->joy1+=0x1;
+    }
+    if(keyboard[SDL_SCANCODE_X]{ //b
+        nes->joy1+=0x2;
+     }
+    if(keyboard[SDL_SCANCODE_Q]{ //select
+        nes->joy1+=0x10;
+    }
+    if(keyboard[SDL_SCANCODE_W]{ //start
+        nes->joy1+=0x20;
+    }
+    if(keyboard[SDL_SCANCODE_UP]{ //up
+        nes->joy1+=0x40;
+    }
+    if(keyboard[SDL_SCANCODE_DOWN]{ //down
+        nes->joy1+=0x80;
+    }
+    if(keyboard[SDL_SCANCODE_LEFT]{ //left
+        nes->joy1+=0x160;
+    }
+    if(keyboard[SDL_SCANCODE_RIGHT]{ //right
+        nes->joy1+=0x320;
+    }
+    
     system("PAUSE");
     SDL_FreeSurface(surface);
     SDL_FreeSurface(screen);
