@@ -64,6 +64,25 @@ int16_t* play_triangle(int16_t* arr, int16_t freq, int16_t len, int16_t step, in
 
 }
 
+int changeTone(Mix_Chunk* tone, int fade, int chan, int freq, uint form_dat, int chan_dat){
+
+    SDL_AudioCVT converter;
+
+    SDL_BuildAudioCVT(&converter, form_dat, chan_dat, freq, form_dat, chan_dat, 44100);
+
+    converter.buf = (Uint8*) SDL_malloc(converter.len * converter.len_mult);
+    converter.len = tone->alen;
+    SDL_memcpy(converter.buf, tone->abuf, tone->alen);
+
+    SDL_ConvertAudio(&converter);
+
+    tone->alen = converter.len_cvt;
+    tone->abuf = converter.buf;
+
+    return 0;
+
+}
+
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
     switch (op) {
