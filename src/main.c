@@ -3,12 +3,15 @@
 #include <SDL2/SDL_surface.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "math.h"
+#include <stdbool.h>
+#include <SDL2/SDL_audio.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "nes.h"
 #include "error.h"
 
+#define CPU_FREQ            1789773
+#define AUDIO_MASTER_FREQ   44100
 
 const int freq_master = 44100;
 const float duty_lookup[4] = {1.0, 0.707107, 0.9238795, -0.382683}; //duty for 50%, 25%, 12.5%, negate 25%
@@ -70,7 +73,7 @@ int changeTone(Mix_Chunk* tone, int fade, int chan, int freq, uint form_dat, int
 
     SDL_BuildAudioCVT(&converter, form_dat, chan_dat, freq, form_dat, chan_dat, 44100);
 
-    converter.buf = (Uint8*) SDL_malloc(converter.len * converter.len_mult);
+    converter.buf = (uint8_t*) SDL_malloc(converter.len * converter.len_mult);
     converter.len = tone->alen;
     SDL_memcpy(converter.buf, tone->abuf, tone->alen);
 
@@ -235,6 +238,24 @@ int main(int argc, char* argv[]) {
     struct Nes nes;
     init_nes(&nes, cartridge);
 
+    //Load Audio
+    Mix_Chunk *pulse_master = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p1_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p2_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *tri_master = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    if(pulse_master == NULL || p1_duty_125 == NULL || p1_duty_25 == NULL || p1_duty_50 == NULL || p1_duty_25n == NULL || p2_duty_125 == NULL || p2_duty_25 == NULL || p2_duty_50 == NULL || p2_duty_25n == NULL || tri_master == NULL){
+        printf("Failed mix load with error: %s\n", Mix_GetError());
+    }
     // run n vblanks of rom
     int acc_cycle = 7;
     int vblanks = 0;
@@ -243,6 +264,35 @@ int main(int argc, char* argv[]) {
         //nlog("%6i  %04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X             CYC:%i\n", i, nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp, acc_cycle);
 
         int cycle = step_cpu(&nes);
+	    
+	p1_duty = (nes.pulse_1_1 >> 6);
+        p1_env_flg = (nes.pulse_1_1 << 2) >> 7;
+        p1_vol_flg = (nes.pulse_1_1 << 3) >> 7;
+        p1_env_val = (nes.pulse_1_1 << 4) >> 4;
+
+        p1_timer_lo = nes.pulse_1_3;
+
+        p1_length_ctr = nes.pulse_1_4 >> 3;
+        p1_length_ctr = (nes.pulse_1_4 << 5) >> 5;
+
+        p2_duty = (nes.pulse_1_1 >> 6);
+        p2_env_flg = (nes.pulse_1_1 << 2) >> 7;
+        p2_vol_flg = (nes.pulse_1_1 << 3) >> 7;
+        p2_env_val = (nes.pulse_1_1 << 4) >> 4;
+
+        p2_timer_lo = nes.pulse_1_3;
+
+        p2_length_ctr = nes.pulse_1_4 >> 3;
+        p2_length_ctr = (nes.pulse_1_4 << 5) >> 5;
+
+
+        tri_lin_ctl = nes.tri_1 >> 7;
+        tri_lin_ld = (nes.tri_1 << 1) >> 1;
+
+        tri_lo = nes.tri_2;
+        tri_len_ld = nes.tri_3 >> 3;
+        tri_hi = (nes.tri_3 >> 3) << 3;
+	    
         vblanks += step_ppu(&nes, cycle);
         acc_cycle += cycle;
     }
@@ -283,6 +333,20 @@ int main(int argc, char* argv[]) {
     SDL_DestroyWindow(window);
     free(pixels);
     free(nes_pixels);
+	
+    Mix_FreeChunk(pulse_master);
+    Mix_FreeChunk(p1_duty_125);
+    Mix_FreeChunk(p1_duty_25);
+    Mix_FreeChunk(p1_duty_50);
+    Mix_FreeChunk(p1_duty_25n);
+
+    Mix_FreeChunk(p2_duty_125);
+    Mix_FreeChunk(p2_duty_25);
+    Mix_FreeChunk(p2_duty_50);
+    Mix_FreeChunk(p2_duty_25n);
+
+    Mix_FreeChunk(tri_master);
+	
     /////////////////////
 
     // free nes
