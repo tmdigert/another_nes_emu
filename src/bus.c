@@ -16,19 +16,17 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             case 0x2002: {
                 uint8_t out = nes->ppustatus;
                 nes->ppustatus &= 0x7F;
-                nes->ppuaddr_latch = 0;
-                nes->ppuscroll_latch = 0;
                 return out;
-            } break;
+            }
             case 0x2007: {
                 uint8_t out = ppu_bus_read(nes, nes->ppuaddr);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return out;
-            } break;
+            }
             default: {
                 error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
                 assert(0);
-            } break;
+            }
         }
     }
 
@@ -61,36 +59,52 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             case 0x2000: {
                 nes->ppuctrl = byte;
                 assert((nes->ppuctrl & 0b11) == 0);
-            } break;
+                return;
+            }
             case 0x2001: {
-                nes->ppumask |= byte;
-            } break;
+                nes->ppumask = byte;
+                return;
+            }
             case 0x2003: {
-                // hopefully we can ignore this for now
-            } break;
+                nes->oamaddr = byte;
+                return;
+            }
             case 0x2005: {
                 nes->ppuscroll <<= 8;
                 nes->ppuscroll |= byte;
-            } break;
+                return;
+            }
             case 0x2006: {
                 nes->ppuaddr <<= 8;
                 nes->ppuaddr |= byte;
-            } break;
+                return;
+            }
             case 0x2007: {
                 ppu_bus_write(nes, nes->ppuaddr, byte); 
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
-            } break;
+                return;
+            }
             default: {
                 error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
                 assert(0);
-            } break;
+                return;
+            }
         }
-        return;
     }
 
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
         // TODO: implement
+        switch (addr) {
+            // OAM
+            case 0x4014: {
+                uint8_t i = nes->oamaddr;
+                do {
+                    nes->oam[i] = cpu_bus_read(nes, (byte << 8) + i);
+                    i++;
+                } while (i != 0);
+            } break;
+        }
         return;
     }
 
