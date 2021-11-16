@@ -15,7 +15,7 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles) {
         if (nes->ppuctrl & 0x80) {
             nes->nmi = 1;
         }
-        nlog("PPU: vblank (%i..%i) [nmi = %i, ppuctrl = 0x%02X]", old_cycle, nes->cycle, nes->nmi, nes->ppuctrl);
+        //nlog("PPU: vblank (%i..%i) [nmi = %i, ppuctrl = 0x%02X]", old_cycle, nes->cycle, nes->nmi, nes->ppuctrl);
         nes->ppustatus |= 0x80; // set vblank flag
     }
 

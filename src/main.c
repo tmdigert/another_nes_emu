@@ -270,7 +270,17 @@ int main(int argc, char* argv[]) {
 
             // keyboard
             int keys = 0;
-            SDL_PollEvent(0);
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT) goto exit;
+                if (event.type == SDL_WINDOWEVENT) {
+                    switch (event.window.event) {
+                        case SDL_WINDOWEVENT_MOVED: {
+                            nlog("moved");
+                        } break;
+                    }
+                }
+            }
             const uint8_t* keyboard = SDL_GetKeyboardState(&keys);
             uint8_t state = 0;
             state |= keyboard[SDL_SCANCODE_RIGHT] << 7;
@@ -305,10 +315,14 @@ int main(int argc, char* argv[]) {
             SDL_FreeSurface(surface);
 
             int end = SDL_GetTicks();
-            SDL_Delay(16.66 - (end - start));
+            if (end - start < 16) {
+                SDL_Delay(16 - (end - start));
+            }
         };
         acc_cycle += cycle;
     }
+
+exit:
 
     // free render
     SDL_FreeSurface(screen);
