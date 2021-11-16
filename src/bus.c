@@ -27,7 +27,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", addr);
                 assert(0);
             }
         }
@@ -50,7 +50,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", addr);
                 assert(0);
             }
         }
@@ -112,7 +112,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented bus write: 0x%04X", addr);
                 assert(0);
                 return;
             }
