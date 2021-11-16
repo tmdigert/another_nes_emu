@@ -13,16 +13,19 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     // ppu [0x2000, 0x3FFF]
     if (addr <= 0x3FFF) {
         switch (0x2000 | (addr & 0b111)) {
+            // ppustatus
             case 0x2002: {
                 uint8_t out = nes->ppustatus;
                 nes->ppustatus &= 0x7F;
                 return out;
             }
+            // ppuadata
             case 0x2007: {
                 uint8_t out = ppu_bus_read(nes, nes->ppuaddr);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return out;
             }
+            //
             default: {
                 error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
                 assert(0);
@@ -32,8 +35,25 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
 
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
-        // TODO: implement
-        return 0;
+        switch (addr) {
+            // joypad 1
+            case 0x4016: {
+                uint8_t out = nes->joy1 & 0x01;
+                nes->joy1 >>= 1;
+                return out;
+            }
+            // joypad 2
+            case 0x4017: {
+                uint8_t out = nes->joy2 & 0x01;
+                nes->joy2 >>= 1;
+                return out;
+            }
+            //
+            default: {
+                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
+                assert(0);
+            }
+        }
     }
 
     // normally disabled, don't implement
@@ -56,34 +76,41 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     if (addr <= 0x3FFF) {
         // TODO: most of these are probably wrong
         switch (0x2000 | (addr & 0b111)) {
+            // ppuctrl
             case 0x2000: {
                 nes->ppuctrl = byte;
                 assert((nes->ppuctrl & 0b11) == 0);
                 return;
             }
+            // ppumask
             case 0x2001: {
                 nes->ppumask = byte;
                 return;
             }
+            // oamaddr
             case 0x2003: {
                 nes->oamaddr = byte;
                 return;
             }
+            // ppuscroll
             case 0x2005: {
                 nes->ppuscroll <<= 8;
                 nes->ppuscroll |= byte;
                 return;
             }
+            // ppuaddr
             case 0x2006: {
                 nes->ppuaddr <<= 8;
                 nes->ppuaddr |= byte;
                 return;
             }
+            // ppudata
             case 0x2007: {
                 ppu_bus_write(nes, nes->ppuaddr, byte); 
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return;
             }
+            //
             default: {
                 error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
                 assert(0);
@@ -96,6 +123,14 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     if (addr <= 0x4017) {
         // TODO: implement
         switch (addr) {
+            // input polling
+            case 0x4016: {
+                // write 1 or 0?
+                nes->joy1 = nes->input1;
+                nes->joy2 = nes->input2;
+                return;
+            };
+
             // OAM
             case 0x4014: {
                 uint8_t i = nes->oamaddr;
@@ -103,9 +138,14 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                     nes->oam[i] = cpu_bus_read(nes, (byte << 8) + i);
                     i++;
                 } while (i != 0);
-            } break;
+                return;
+            };
+
+            // do not abort on unhandled APU
+            default: {
+                return;
+            }
         }
-        return;
     }
 
     // normally disabled, don't implement
