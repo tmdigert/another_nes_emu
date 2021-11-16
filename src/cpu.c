@@ -650,7 +650,7 @@ void inc(struct Nes* nes) {
 
 void jmp(struct Nes* nes) {
     nes->pc = nes->micro_addr;
-    if (nes->pc !=  0xC7E1) nlog("jmp to 0x%04X", nes->pc);
+    //if (nes->pc !=  0xC7E1) nlog("jmp to 0x%04X", nes->pc);
 }
 
 void jsr(struct Nes* nes) {
@@ -660,7 +660,7 @@ void jsr(struct Nes* nes) {
     cpu_bus_write(nes, 0x0100 | nes->sp, (uint8_t)(addr));
     nes->sp -= 1;
     nes->pc = nes->micro_addr;
-    if (nes->pc != 0xF4ED) nlog("jsr to 0x%04X", nes->pc);
+    //if (nes->pc != 0xF4ED) nlog("jsr to 0x%04X", nes->pc);
 }
 
 void lda(struct Nes* nes) {
