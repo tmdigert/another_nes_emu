@@ -14,6 +14,12 @@ struct Nes {
     // Cartridge
     struct Cartridge cartridge;
 
+    // IO
+    uint8_t input1;
+    uint8_t input2;
+    uint8_t joy1;
+    uint8_t joy2;
+
     // CPU
     uint8_t ram[0x0800];
     uint8_t acc;

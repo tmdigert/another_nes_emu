@@ -205,16 +205,15 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     uint8_t pixel = high_bits % 2 << 1 | low_bits % 2;
                     low_bits >>= 1;
                     high_bits >>= 1;
+                    if (pixel == 0) continue;
     
                     //
                     uint16_t pixel_x = byte3 + ((byte2 & 0x40) > 0 ? pixel_index : sprite_size - 1 - pixel_index);
                     uint16_t pixel_y = 1 + byte0 + spr * 8 + ((byte2 & 0x80) > 0 ? sprite_size - 1 - bit_plane : bit_plane); // this ternary possibly wrong
                     uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
     
-                    // skip clear
-                    if (pixel == 0) {
-                        continue;
-                    }
+                    //
+
                     pixels[index] = spr_palette[palette_id][pixel];
                 }
             }
@@ -268,6 +267,22 @@ int main(int argc, char* argv[]) {
         int cycle = step_cpu(&nes);
         if (step_ppu(&nes, cycle)) {
             vblanks += 1;
+
+            // keyboard
+            int keys = 0;
+            SDL_PollEvent(0);
+            const uint8_t* keyboard = SDL_GetKeyboardState(&keys);
+            uint8_t state = 0;
+            state |= keyboard[SDL_SCANCODE_RIGHT] << 7;
+            state |= keyboard[SDL_SCANCODE_LEFT] << 6;
+            state |= keyboard[SDL_SCANCODE_DOWN] << 5;
+            state |= keyboard[SDL_SCANCODE_UP] << 4;
+            state |= keyboard[SDL_SCANCODE_RETURN] << 3;
+            state |= keyboard[SDL_SCANCODE_RSHIFT] << 2;
+            state |= keyboard[SDL_SCANCODE_X] << 1;
+            state |= keyboard[SDL_SCANCODE_Z] << 0;
+            nes.input1 = state;
+
             // render 
             fill_nametable(&nes, nes_pixels);
 

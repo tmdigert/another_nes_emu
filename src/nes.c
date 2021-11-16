@@ -21,6 +21,12 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     // cartridge
     nes->cartridge = cartridge;
 
+    //
+    nes->input1 = 0;
+    nes->input2 = 0;
+    nes->joy1 = 0;
+    nes->joy2 = 0;
+
     // https://wiki.nesdev.org/w/index.php/CPU_power_up_state
     memset(nes->ram, 0, 0x800); 
     nes->acc = 0;
