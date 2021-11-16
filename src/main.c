@@ -211,7 +211,10 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     uint16_t pixel_y = 1 + byte0 + spr * 8 + ((byte2 & 0x80) > 0 ? sprite_size - 1 - bit_plane : bit_plane); // this ternary possibly wrong
                     uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
     
-                    //
+                    // skip clear
+                    if (pixel == 0) {
+                        continue;
+                    }
                     pixels[index] = spr_palette[palette_id][pixel];
                 }
             }
@@ -231,23 +234,7 @@ int main(int argc, char* argv[]) {
     struct Nes nes;
     init_nes(&nes, cartridge);
 
-    // run n vblanks of rom
-    int acc_cycle = 7;
-    int vblanks = 0;
-    while (vblanks < 900) {
-        //uint8_t next = cpu_bus_read(&nes, nes.pc);
-        //nlog("%6i  %04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X             CYC:%i\n", i, nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp, acc_cycle);
-            /*if (nes.pc >= 0xF11E && nes.pc <= 0xF139) {
-                uint8_t next = cpu_bus_read(&nes, nes.pc);
-                nlog("%04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X", nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp);
-            } */      
-        int cycle = step_cpu(&nes);
-        vblanks += step_ppu(&nes, cycle);
-        acc_cycle += cycle;
-    }
-
-    /////////////////////
-    // render nametable test
+    // Render
     uint8_t lookup[] = {
         84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
         152, 150, 152, 8, 76, 196, 48, 50, 236, 92, 30, 228, 136, 20, 176, 160, 20, 100, 152, 34, 32, 120, 60, 0, 84, 90, 0, 40, 114, 0, 8, 124, 0, 0, 118, 40, 0, 102, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -257,41 +244,62 @@ int main(int argc, char* argv[]) {
     uint32_t nes_width = 256;
     uint32_t nes_height = 240;
 
-    //
-    uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
-    uint8_t* nes_pixels = malloc(nes_width * nes_height * 4);
-    //memset(nes_pixels, 0, );
-
-    //
-    fill_nametable(&nes, nes_pixels);
-
-    // convert NES pixel to RGB pixels
-    for (int y = 0; y < nes_height; y++) {
-        for (int x = 0; x < nes_width; x++) {
-            uint32_t dst_i = x + y * nes_width;
-            uint32_t src_i = x + y * nes_width * 2;
-            screen_pixels[dst_i * 3 + 0] = lookup[nes_pixels[src_i] * 3 + 0];
-            screen_pixels[dst_i * 3 + 1] = lookup[nes_pixels[src_i] * 3 + 1];
-            screen_pixels[dst_i * 3 + 2] = lookup[nes_pixels[src_i] * 3 + 2];
-        }
-    }       
-
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
     assert(window);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
     assert(screen);
-    SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(screen_pixels, 256, 240, 24, 256 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
-    assert(surface);
-    SDL_BlitSurface(surface, 0, screen, 0);
-    SDL_UpdateWindowSurface(window);
-    system("PAUSE");
-    SDL_FreeSurface(surface);
+
+    uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
+    uint8_t* nes_pixels = malloc(nes_width * nes_height * 4);
+
+    // run n vblanks of rom
+    int acc_cycle = 7;
+    int vblanks = 0;
+
+    while (1) {
+        //uint8_t next = cpu_bus_read(&nes, nes.pc);
+        //nlog("%6i  %04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X             CYC:%i\n", i, nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp, acc_cycle);
+            /*if (nes.pc >= 0xF11E && nes.pc <= 0xF139) {
+                uint8_t next = cpu_bus_read(&nes, nes.pc);
+                nlog("%04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X", nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp);
+            } */      
+        int start = SDL_GetTicks();
+        int cycle = step_cpu(&nes);
+        if (step_ppu(&nes, cycle)) {
+            vblanks += 1;
+            // render 
+            fill_nametable(&nes, nes_pixels);
+
+            // convert NES pixel to RGB pixels
+            for (int y = 0; y < nes_height; y++) {
+                for (int x = 0; x < nes_width; x++) {
+                    uint32_t dst_i = x + y * nes_width;
+                    uint32_t src_i = x + y * nes_width * 2;
+                    screen_pixels[dst_i * 3 + 0] = lookup[nes_pixels[src_i] * 3 + 0];
+                    screen_pixels[dst_i * 3 + 1] = lookup[nes_pixels[src_i] * 3 + 1];
+                    screen_pixels[dst_i * 3 + 2] = lookup[nes_pixels[src_i] * 3 + 2];
+                }
+            }     
+
+            // blit and render (vsync?)
+            SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(screen_pixels, 256, 240, 24, 256 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
+            assert(surface);
+            SDL_BlitSurface(surface, 0, screen, 0);
+            SDL_UpdateWindowSurface(window); 
+            SDL_FreeSurface(surface);
+
+            int end = SDL_GetTicks();
+            SDL_Delay(16.66 - (end - start));
+        };
+        acc_cycle += cycle;
+    }
+
+    // free render
     SDL_FreeSurface(screen);
     SDL_DestroyWindow(window);
     free(screen_pixels);
     free(nes_pixels);
-    /////////////////////
 
     // free nes
     free_nes(&nes);
