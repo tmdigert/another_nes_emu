@@ -48,10 +48,9 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
                 nes->joy2 >>= 1;
                 return out;
             }
-            //
+            // do not abort on unhandled APU
             default: {
-                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", addr);
-                assert(0);
+                return 0;
             }
         }
     }
@@ -126,21 +125,22 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             // input polling
             case 0x4016: {
                 // write 1 or 0?
-                nes->joy1 = nes->input1;
-                nes->joy2 = nes->input2;
+                if (byte == 1) {
+                    nes->joy1 = nes->input1;
+                    nes->joy2 = nes->input2;
+                }
                 return;
             };
-
             // OAM
             case 0x4014: {
                 uint8_t i = nes->oamaddr;
+                uint8_t i_start = i;
                 do {
                     nes->oam[i] = cpu_bus_read(nes, (byte << 8) + i);
                     i++;
-                } while (i != 0);
+                } while (i != i_start);
                 return;
             };
-
             // do not abort on unhandled APU
             default: {
                 return;
