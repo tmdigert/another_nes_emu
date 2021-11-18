@@ -27,7 +27,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
                 assert(0);
             }
         }
@@ -48,9 +48,10 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
                 nes->joy2 >>= 1;
                 return out;
             }
-            // do not abort on unhandled APU
+            //
             default: {
-                return 0;
+                error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
+                assert(0);
             }
         }
     }
@@ -64,7 +65,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     return cartridge_prg_read(&nes->cartridge, addr);
 }
 
-void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
+void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     // ram [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
         nes->ram[addr & 0x07FF] = byte;
@@ -105,14 +106,15 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
             // ppudata
             case 0x2007: {
-                ppu_bus_write(nes, nes->ppuaddr, byte); 
+                ppu_bus_write(nes, nes->ppuaddr, byte);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return;
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented bus write: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented PPU reg write: 0x%04X", addr);
                 assert(0);
+
                 return;
             }
         }
@@ -120,27 +122,88 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 
     // APU and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
+      switch(0x4000 | (addr & 0b1100)){
+          case 0x4000: {
+              nes->apu_read = 1;
+              nes->pulse_1_1 = byte;
+          }
+          case 0x4001: {
+            nes->apu_read = 1;
+            nes->pulse_1_2 = byte;
+          }
+          case 0x4002: {
+            nes->apu_read = 1;
+            nes->pulse_1_3 = byte;
+          }
+          case 0x4003: {
+            nes->apu_read = 1;
+            nes->pulse_1_4 = byte;
+          }
+          case 0x4004: {
+            nes->apu_read = 1;
+            nes->pulse_2_1 = byte;
+          }
+          case 0x4005: {
+            nes->apu_read = 1;
+            nes->pulse_2_2 = byte;
+          }
+          case 0x4006: {
+            nes->apu_read = 1;
+            nes->pulse_2_3 = byte;
+          }
+          case 0x4007: {
+            nes->apu_read = 1;
+            nes->pulse_2_4 = byte;
+          }
+          case 0x4008: {
+            nes->apu_read = 1;
+            nes->tri_1 = byte;
+          }
+          case 0x4009: {
+              //error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
+              //assert(0);
+              int8_t placehold = 1;
+          }
+          case 0x400A: {
+            nes->apu_read = 1;
+            nes->tri_2 = byte;
+          }
+          case 0x400B: {
+            nes->apu_read = 1;
+            nes->tri_3 = byte;
+          }
+          case 0x4015:{
+            nes->apu_read = 1;
+            nes->apu_status = byte;
+          }
+          default: {
+              //error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
+              //assert(0);
+              int8_t placehold = 1;
+
+          }break;
+
+      }
         // TODO: implement
         switch (addr) {
             // input polling
             case 0x4016: {
                 // write 1 or 0?
-                if (byte == 1) {
-                    nes->joy1 = nes->input1;
-                    nes->joy2 = nes->input2;
-                }
+                nes->joy1 = nes->input1;
+                nes->joy2 = nes->input2;
                 return;
             };
+
             // OAM
             case 0x4014: {
                 uint8_t i = nes->oamaddr;
-                uint8_t i_start = i;
                 do {
                     nes->oam[i] = cpu_bus_read(nes, (byte << 8) + i);
                     i++;
-                } while (i != i_start);
+                } while (i != 0);
                 return;
             };
+
             // do not abort on unhandled APU
             default: {
                 return;
