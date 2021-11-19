@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
             } */      
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
-        if (step_ppu(&nes, cycle, nes_pixels)) {
+        if (step_ppu(&nes, 3 * cycle, nes_pixels)) {
             draw_sprites(&nes, nes_pixels);
             vblanks += 1;
 
