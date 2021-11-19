@@ -72,82 +72,13 @@ char* lookup_opcode(uint8_t op) {
 
 #include <assert.h>
 
-void fill_nametable(struct Nes* nes, uint8_t* pixels) {
+void draw_sprites(struct Nes* nes, uint8_t* pixels) {
     // constants
     uint16_t nametable_width = 32; // in tiles
     uint16_t nametable_height = 30; // in tiles
     uint16_t tile_size = 8; // in pixels
     uint16_t sprite_size = 8; // in pixels
 
-    // palettes
-    uint8_t bg_palette[4][4];
-    bg_palette[0][0] = ppu_bus_read(nes, 0x3F00);
-    bg_palette[0][1] = ppu_bus_read(nes, 0x3F01);
-    bg_palette[0][2] = ppu_bus_read(nes, 0x3F02);
-    bg_palette[0][3] = ppu_bus_read(nes, 0x3F03);
-    bg_palette[1][0] = ppu_bus_read(nes, 0x3F04);
-    bg_palette[1][1] = ppu_bus_read(nes, 0x3F05);
-    bg_palette[1][2] = ppu_bus_read(nes, 0x3F06);
-    bg_palette[1][3] = ppu_bus_read(nes, 0x3F07);
-    bg_palette[2][0] = ppu_bus_read(nes, 0x3F08);
-    bg_palette[2][1] = ppu_bus_read(nes, 0x3F09);
-    bg_palette[2][2] = ppu_bus_read(nes, 0x3F0A);
-    bg_palette[2][3] = ppu_bus_read(nes, 0x3F0B);
-    bg_palette[3][0] = ppu_bus_read(nes, 0x3F0C);
-    bg_palette[3][1] = ppu_bus_read(nes, 0x3F0D);
-    bg_palette[3][2] = ppu_bus_read(nes, 0x3F0E);
-    bg_palette[3][3] = ppu_bus_read(nes, 0x3F0F);
-
-    for (int nametable = 0; nametable < 1; nametable += 1) {
-        uint16_t nametable_base = 0x2000 | (0x400 * nametable);
-        uint16_t attribute_base = nametable_base | 0x3C0;
-
-        // loop through each 8x8 tile (32 by 30 iterations)
-        for (uint8_t tile8_y = 0; tile8_y < nametable_height; tile8_y++) {
-            for (uint8_t tile8_x = 0; tile8_x < nametable_width; tile8_x++) {
-
-                uint16_t nametable_index = tile8_x + tile8_y * nametable_width;
-                uint16_t attribute_index = tile8_x / 4 + tile8_y / 4 * nametable_width / 4;
-
-                // data from nametable/attribute tables
-                uint8_t nametable_data = ppu_bus_read(nes, nametable_base + nametable_index);
-                uint8_t attribute_data = ppu_bus_read(nes, attribute_base + attribute_index);
-
-                // form patterntable base
-                uint16_t pattern_table_base = nametable_data << 4 | nes->ppuctrl << 8 & 0b1000000000000; 
-
-                // form palette id
-                uint8_t x_sub_tile = (tile8_x/2) % 2;
-                uint8_t y_sub_tile = (tile8_y/2) % 2;
-                uint8_t palette_id = (attribute_data >> x_sub_tile * 2 + y_sub_tile * 4) & 0b11;
-
-                // loop through each pixel (8 by 8 iterations)
-                for (uint8_t bit_plane = 0; bit_plane < tile_size; bit_plane++) {
-                    // load the bit plane
-                    uint8_t low_bits = ppu_bus_read(nes, pattern_table_base | bit_plane); // low bits for 8 pixels
-                    uint8_t high_bits = ppu_bus_read(nes, pattern_table_base | tile_size | bit_plane); // high bits for 8 pixels
-
-                    // for each pixel in plane
-                    for (uint8_t pixel_index = 0; pixel_index < tile_size; pixel_index++) {
-                        // extract rightmost pixel from the two bit planes above
-                        uint8_t pixel = high_bits % 2 << 1 | low_bits % 2;
-                        low_bits >>= 1;
-                        high_bits >>= 1;
-
-                        // find where this pixel is even suppose to go
-                        uint16_t pixel_x = (tile_size - 1 - pixel_index) + tile_size * tile8_x + tile_size * nametable_width * (nametable % 2);
-                        uint16_t pixel_y = tile_size * nametable_height * (nametable / 2) + tile_size * tile8_y + bit_plane;
-                        uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
-
-                        // put
-                        pixels[index] = bg_palette[palette_id][pixel];
-                    }
-                }
-            }
-        } 
-    }
-
-    // more palettes
     uint8_t spr_palette[4][4];
     spr_palette[0][0] = ppu_bus_read(nes, 0x3F10);
     spr_palette[0][1] = ppu_bus_read(nes, 0x3F11);
@@ -210,7 +141,8 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     //
                     uint16_t pixel_x = byte3 + ((byte2 & 0x40) > 0 ? pixel_index : sprite_size - 1 - pixel_index);
                     uint16_t pixel_y = 1 + byte0 + spr * 8 + ((byte2 & 0x80) > 0 ? sprite_size - 1 - bit_plane : bit_plane); // this ternary possibly wrong
-                    uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
+                    if (pixel_x >= 256 || pixel_y >= 240) continue;
+                    uint32_t index = pixel_x + pixel_y * nametable_width * tile_size;
     
                     //
 
@@ -250,7 +182,7 @@ int main(int argc, char* argv[]) {
     assert(screen);
 
     uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
-    uint8_t* nes_pixels = malloc(nes_width * nes_height * 4);
+    uint8_t* nes_pixels = malloc(nes_width * nes_height);
 
     // run n vblanks of rom
     int acc_cycle = 7;
@@ -265,7 +197,8 @@ int main(int argc, char* argv[]) {
             } */      
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
-        if (step_ppu(&nes, cycle)) {
+        if (step_ppu(&nes, cycle, nes_pixels)) {
+            draw_sprites(&nes, nes_pixels);
             vblanks += 1;
 
             // keyboard
@@ -294,13 +227,13 @@ int main(int argc, char* argv[]) {
             nes.input1 = state;
 
             // render 
-            fill_nametable(&nes, nes_pixels);
+            //fill_nametable(&nes, nes_pixels);
 
             // convert NES pixel to RGB pixels
             for (int y = 0; y < nes_height; y++) {
                 for (int x = 0; x < nes_width; x++) {
                     uint32_t dst_i = x + y * nes_width;
-                    uint32_t src_i = x + y * nes_width * 2;
+                    uint32_t src_i = x + y * nes_width;
                     screen_pixels[dst_i * 3 + 0] = lookup[nes_pixels[src_i] * 3 + 0];
                     screen_pixels[dst_i * 3 + 1] = lookup[nes_pixels[src_i] * 3 + 1];
                     screen_pixels[dst_i * 3 + 2] = lookup[nes_pixels[src_i] * 3 + 2];

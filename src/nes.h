@@ -54,7 +54,7 @@ void free_nes(struct Nes*);
 
 // exec
 uint8_t step_cpu(struct Nes*);
-uint8_t step_ppu(struct Nes*, uint8_t);
+uint8_t step_ppu(struct Nes*, uint8_t, uint8_t*);
 void reset(struct Nes*);
 
 // misc
