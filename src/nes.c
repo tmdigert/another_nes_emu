@@ -50,6 +50,7 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     // TODO: ppulatch cleared
     nes->ppuscroll = 0;
     nes->ppuaddr = 0;
+    nes->read_buffer = 0;
 }
 
 void free_nes(struct Nes* nes) {

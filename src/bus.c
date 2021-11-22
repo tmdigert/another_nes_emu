@@ -21,9 +21,11 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             }
             // ppuadata
             case 0x2007: {
-                uint8_t out = ppu_bus_read(nes, nes->ppuaddr);
+                uint8_t out = nes->read_buffer;
+                nes->read_buffer = ppu_bus_read(nes, nes->ppuaddr);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
-                return out;
+                // return read_buffer immediately if in palette range
+                return ((nes->ppuaddr & 0x3FFF) < 0x3F00) ? out : nes->read_buffer;
             }
             //
             default: {

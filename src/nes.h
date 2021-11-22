@@ -47,6 +47,7 @@ struct Nes {
     uint8_t oamaddr; // ppu register @ 0x2003
     uint16_t ppuscroll; // ppu register @ 0x2005
     uint16_t ppuaddr; // ppu register @ 0x2006
+    uint8_t read_buffer; // used by ppuaddr
 };
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
