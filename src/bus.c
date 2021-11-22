@@ -100,10 +100,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             case 0x2006: {
                 nes->ppuaddr <<= 8;
                 nes->ppuaddr |= byte;
-                //if (nes->ppuaddr == 0x2062) {
-                //    nlog("%04X %02X", nes->ppuaddr, byte);
-                    //assert(0);
-                //}
                 return;
             }
             // ppudata
