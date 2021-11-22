@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "nes.h"
 #include "error.h"
+#include "nes.h"
 
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
@@ -155,6 +155,7 @@ void draw_sprites(struct Nes* nes, uint8_t* pixels) {
 
 #include <assert.h>
 #include "mapper0.h"
+#include "debug.h"
 
 int main(int argc, char* argv[]) {
     // load ROM
@@ -172,17 +173,19 @@ int main(int argc, char* argv[]) {
         236, 238, 236, 76, 154, 236, 120, 124, 236, 176, 98, 236, 228, 84, 236, 236, 88, 180, 236, 106, 100, 212, 136, 32, 160, 170, 0, 116, 196, 0, 76, 208, 32, 56, 204, 108, 56, 180, 204, 60, 60, 60, 0, 0, 0, 0, 0, 0, 
         236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160, 0, 0, 0, 0, 0, 0
     };
-    uint32_t nes_width = 256;
-    uint32_t nes_height = 240;
 
+    // init SDL video
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
-    SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
-    assert(window);
-    SDL_Surface* screen = SDL_GetWindowSurface(window);
-    assert(screen);
 
-    uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
-    uint8_t* nes_pixels = malloc(nes_width * nes_height);
+    // create windows
+    SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    assert(window);
+    SDL_Window* nametable_window = SDL_CreateWindow("NES Emu: Nametable", 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 0);
+    assert(nametable_window);
+
+    // allocate pixel space
+    uint8_t* screen_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
+    uint8_t* nes_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT);
 
     // run n vblanks of rom
     int acc_cycle = 7;
@@ -206,8 +209,24 @@ int main(int argc, char* argv[]) {
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
         if (step_ppu(&nes, 3 * cycle, nes_pixels)) {
-            draw_sprites(&nes, nes_pixels);
             vblanks += 1;
+
+            // debug render nametable
+            uint8_t nametable_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
+            draw_ppu_nametables(&nes, nametable_pixels);
+            uint8_t nametable_rgb[SCREEN_WIDTH * SCREEN_HEIGHT * 4 * 3];
+            for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT * 4; i++) {
+                nametable_rgb[3 * i + 0] = lookup[3 * nametable_pixels[i] + 0];
+                nametable_rgb[3 * i + 1] = lookup[3 * nametable_pixels[i] + 1];
+                nametable_rgb[3 * i + 2] = lookup[3 * nametable_pixels[i] + 2];
+            }
+            SDL_Surface* temp = SDL_CreateRGBSurfaceFrom(nametable_rgb, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 24, 3 * 2 * SCREEN_WIDTH, 0x0000FF, 0x00FF00, 0xFF0000, 0);
+            SDL_BlitSurface(temp, 0, SDL_GetWindowSurface(nametable_window), 0);
+            SDL_UpdateWindowSurface(nametable_window); 
+            SDL_FreeSurface(temp);
+
+            // TEMP
+            draw_sprites(&nes, nes_pixels);
 
             // keyboard
             int keys = 0;
@@ -238,10 +257,10 @@ int main(int argc, char* argv[]) {
             //fill_nametable(&nes, nes_pixels);
 
             // convert NES pixel to RGB pixels
-            for (int y = 0; y < nes_height; y++) {
-                for (int x = 0; x < nes_width; x++) {
-                    uint32_t dst_i = x + y * nes_width;
-                    uint32_t src_i = x + y * nes_width;
+            for (int y = 0; y < SCREEN_HEIGHT; y++) {
+                for (int x = 0; x < SCREEN_WIDTH; x++) {
+                    uint32_t dst_i = x + y * SCREEN_WIDTH;
+                    uint32_t src_i = x + y * SCREEN_WIDTH;
                     screen_pixels[dst_i * 3 + 0] = lookup[nes_pixels[src_i] * 3 + 0];
                     screen_pixels[dst_i * 3 + 1] = lookup[nes_pixels[src_i] * 3 + 1];
                     screen_pixels[dst_i * 3 + 2] = lookup[nes_pixels[src_i] * 3 + 2];
@@ -251,7 +270,7 @@ int main(int argc, char* argv[]) {
             // blit and render (vsync?)
             SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(screen_pixels, 256, 240, 24, 256 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
             assert(surface);
-            SDL_BlitSurface(surface, 0, screen, 0);
+            SDL_BlitSurface(surface, 0, SDL_GetWindowSurface(window), 0);
             SDL_UpdateWindowSurface(window); 
             SDL_FreeSurface(surface);
 
@@ -266,7 +285,6 @@ int main(int argc, char* argv[]) {
 exit:
 
     // free render
-    SDL_FreeSurface(screen);
     SDL_DestroyWindow(window);
     free(screen_pixels);
     free(nes_pixels);

@@ -1,5 +1,8 @@
+#pragma once
+
 #include <stdint.h>
 #include "cartridge.h"
+#include "defines.h"
 
 #define STATUS_FLAG_CARRY       0
 #define STATUS_FLAG_ZERO        1

@@ -172,29 +172,18 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
 
     // ciram [0x2000, 0x3EFF]
     if (addr <= 0x3EFF) {
-        // clip to 0x2000
-        addr = 0x2000 | (addr & 0xFFF);
+        // horizontal
+        /*uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b100000000000;
+        addr = ((addr & mirror_mask) >> 1) | (addr & ciram_mask);*/
 
-        // TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
-        if (addr < 0x2400) {
-            return nes->ciram[addr - 0x2000];
-        }
-        // in section B
-        if (addr < 0x2800) {
-            return nes->ciram[addr - 0x2400];
-        }
-        // in section C
-        if (addr < 0x2C00) {
-            return nes->ciram[addr - 0x2400];
-        }
-        // in section D
-        if (addr < 0x3000) {
-            return nes->ciram[addr - 0x2800];
-        }
+        // vertical
+        uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b010000000000;
+        addr = addr & (mirror_mask | ciram_mask);
 
-        // unreachable, abort
-        error(UNREACHABLE, "This line should not be reachable");
-        assert(0);
+        // 
+        return nes->ciram[addr];
     }
 
     // palette [0x3F00, 0x3FFF]
@@ -220,33 +209,18 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 
     // ciram [0x2000, 0x3EFF]
     if (addr <= 0x3EFF) {
-        // clip to 0x2000
-        addr = 0x2000 | addr & 0xFFF;
+        // horizontal
+        /*uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b100000000000;
+        addr = ((addr & mirror_mask) >> 1) | (addr & ciram_mask);*/
 
-        // TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
-        if (addr < 0x2400) {
-            nes->ciram[addr - 0x2000] = byte;
-            return;
-        }
-        // in section B
-        if (addr < 0x2800) {
-            nes->ciram[addr - 0x2400] = byte;
-            return;
-        }
-        // in section C
-        if (addr < 0x2C00) {
-            nes->ciram[addr - 0x2400] = byte;
-            return;
-        }
-        // in section D
-        if (addr < 0x3000) {
-            nes->ciram[addr - 0x2800] = byte;
-            return;
-        }
+        // vertical
+        uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b010000000000;
+        addr = addr & (mirror_mask | ciram_mask);
 
-        // unreachable, abort
-        error(UNREACHABLE, "This line should not be reachable");
-        assert(0);
+        nes->ciram[addr] = byte;
+        return;
     }
 
     // palette [0x3F00, 0x3FFF]
