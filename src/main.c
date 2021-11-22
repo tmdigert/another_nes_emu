@@ -159,7 +159,7 @@ void draw_sprites(struct Nes* nes, uint8_t* pixels) {
 int main(int argc, char* argv[]) {
     // load ROM
     struct Cartridge cartridge;
-    if (load_cartridge_from_file("donkeykong.nes", &cartridge) > 0) return -1;
+    if (load_cartridge_from_file("smb.nes", &cartridge) > 0) return -1;
 
     // load nes
     struct Nes nes;
@@ -188,13 +188,21 @@ int main(int argc, char* argv[]) {
     int acc_cycle = 7;
     int vblanks = 0;
 
+    uint8_t next = 0;
     while (1) {
         //uint8_t next = cpu_bus_read(&nes, nes.pc);
         //nlog("%6i  %04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X             CYC:%i\n", i, nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp, acc_cycle);
             /*if (nes.pc >= 0xF11E && nes.pc <= 0xF139) {
                 uint8_t next = cpu_bus_read(&nes, nes.pc);
                 nlog("%04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X", nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp);
-            } */      
+            } */        
+
+
+        /*if ((nes.pc >= 0xD5B7 && nes.pc <= 0xD5DF) && nes.pc != 0xD5C4 && nes.pc != 0xD5C6) {
+            uint8_t next = cpu_bus_read(&nes, nes.pc);
+            nlog("$%04X: %s [A:$%02X, X:$%02X, Y:$%02X]", nes.pc, lookup_opcode(next), nes.acc, nes.x, nes.y);
+        }*/
+
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
         if (step_ppu(&nes, 3 * cycle, nes_pixels)) {

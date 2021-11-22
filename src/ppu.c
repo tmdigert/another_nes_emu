@@ -2,17 +2,13 @@
 
 #include "nes.h"
 #include "error.h"
+#include "defines.h"
 
 #include <assert.h>
 
 uint32_t cycle(uint16_t scanline, uint16_t cycle, uint8_t even) {
     return scanline * 341 + cycle + even;
 }
-
-#define NAMETABLE_WIDTH 32 // in tiles
-#define NAMETABLE_HEIGHT 30 // in tiles
-#define TILE_SIZE 8 // in pixels
-#define SPRITE_SIZE 8 // in pixels
 
 uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
     uint8_t vblank_flag = 0;
@@ -25,7 +21,13 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
 
         // visible scanlines [0, 239]
         if (scanline <= 239) {
+            uint8_t sprite0_x = nes->oam[0];
+            uint8_t sprite0_y = nes->oam[3];
             if (dot > 255) continue; // skip
+            if (scanline == sprite0_y && dot == sprite0_x && (nes->ppustatus & 0b01000000) == 0) {
+                // sprite 0 hit
+                nes->ppustatus |= 0b01000000;
+            }
             uint8_t pixel_y = scanline;
             uint8_t pixel_x = dot;
 
@@ -34,17 +36,17 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
             uint16_t tile8_y = pixel_y / TILE_SIZE;
 
             // address bases and indexes
-            uint16_t nametable_base = 0x2000;
+            uint16_t nametable_base = 0x2000 | (0x400 * (nes->ppuctrl & 0b11));
             uint16_t attribute_base = nametable_base | 0x3C0;
             uint16_t nametable_index = tile8_x + tile8_y * NAMETABLE_WIDTH;
             uint16_t attribute_index = tile8_x / 4 + tile8_y / 4 * NAMETABLE_WIDTH / 4;
 
             // data
-            uint8_t nametable_data = ppu_bus_read(nes, nametable_base + nametable_index);
-            uint8_t attribute_data = ppu_bus_read(nes, attribute_base + attribute_index);
+            uint8_t nametable_data = ppu_bus_read(nes, nametable_base | nametable_index);
+            uint8_t attribute_data = ppu_bus_read(nes, attribute_base | attribute_index);
 
             // pattern table
-            uint16_t pattern_table_base = nametable_data << 4 | nes->ppuctrl << 8 & 0b1000000000000;
+            uint16_t pattern_table_base = nametable_data << 4 | (((nes->ppuctrl >> 4) & 0x1) * 0x1000);
 
             // palette
             uint8_t x_sub_tile = (tile8_x/2) % 2;
@@ -69,6 +71,11 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
         }
 
         // [240] pre-render (idle)
+        if (scanline == 240 && dot == 1) {
+            // clear sprite 0 hit
+            nes->ppustatus = 0;
+            continue;
+        }
 
         // [241, 260] vblank (mostly idle)
         if (nes->cycle == 82182) {

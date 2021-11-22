@@ -78,7 +78,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             // ppuctrl
             case 0x2000: {
                 nes->ppuctrl = byte;
-                assert((nes->ppuctrl & 0b11) == 0);
                 return;
             }
             // ppumask
@@ -101,6 +100,10 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             case 0x2006: {
                 nes->ppuaddr <<= 8;
                 nes->ppuaddr |= byte;
+                //if (nes->ppuaddr == 0x2062) {
+                //    nlog("%04X %02X", nes->ppuaddr, byte);
+                    //assert(0);
+                //}
                 return;
             }
             // ppudata
