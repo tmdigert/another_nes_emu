@@ -35,6 +35,7 @@ struct Nes {
     uint8_t nmi;
     // CPU micro
     uint16_t micro_addr;
+    uint8_t oam_delay;
 
     // PPU
     uint8_t ciram[0x0800];
@@ -57,7 +58,7 @@ void init_nes(struct Nes*, struct Cartridge);
 void free_nes(struct Nes*);
 
 // exec
-uint8_t step_cpu(struct Nes*);
+uint16_t step_cpu(struct Nes*);
 uint8_t step_ppu(struct Nes*, uint8_t, uint8_t*);
 void reset(struct Nes*);
 

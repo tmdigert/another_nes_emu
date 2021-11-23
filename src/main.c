@@ -208,6 +208,7 @@ int main(int argc, char* argv[]) {
 
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
+
         if (step_ppu(&nes, 3 * cycle, nes_pixels)) {
             vblanks += 1;
 
@@ -232,11 +233,18 @@ int main(int argc, char* argv[]) {
             int keys = 0;
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) goto exit;
                 if (event.type == SDL_WINDOWEVENT) {
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_MOVED: {
                             nlog("moved");
+                        } break;
+                        case SDL_WINDOWEVENT_CLOSE: {
+                            uint8_t i = 0;
+                            do {
+                                nlog("sprite %i: $%02X $%02X $%02X $%02X", i/4, nes.oam[i], nes.oam[i + 1], nes.oam[i + 2], nes.oam[i + 3]);
+                                i += 4;
+                            } while (i != 0);
+                            goto exit;
                         } break;
                     }
                 }
@@ -286,6 +294,7 @@ exit:
 
     // free render
     SDL_DestroyWindow(window);
+    SDL_DestroyWindow(nametable_window);
     free(screen_pixels);
     free(nes_pixels);
 

@@ -37,6 +37,7 @@ void init_nes(struct Nes* nes, struct Cartridge cartridge) {
     nes->status = 0x34;
     nes->reset = 1; // the nes will perform a reset interrupt upon boot
     nes->nmi = 0;
+    nes->oam_delay = 0;
 
     // https://wiki.nesdev.org/w/index.php/PPU_power_up_state
     memset(nes->ciram, 0, 0x800);

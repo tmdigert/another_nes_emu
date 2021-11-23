@@ -21,8 +21,11 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
 
         // visible scanlines [0, 239]
         if (scanline <= 239) {
-            uint8_t sprite0_x = nes->oam[0];
-            uint8_t sprite0_y = nes->oam[3];
+            if (dot >= 257 && dot <= 320) {
+                nes->oamaddr = 0;
+            }
+            uint8_t sprite0_x = nes->oam[nes->oamaddr];
+            uint8_t sprite0_y = nes->oam[(uint8_t)(nes->oamaddr + 3)] - 1;
             if (dot > 255) continue; // skip
             if (scanline == sprite0_y && dot == sprite0_x && (nes->ppustatus & 0b01000000) == 0) {
                 // sprite 0 hit
@@ -70,15 +73,10 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
             continue;
         }
 
-        // [240] pre-render (idle)
-        if (scanline == 240 && dot == 1) {
-            // clear sprite 0 hit
-            nes->ppustatus = 0;
-            continue;
-        }
+        // [240] post-render (idle)
 
         // [241, 260] vblank (mostly idle)
-        if (nes->cycle == 82182) {
+        if (scanline == 241 && dot == 1) {
             vblank_flag = 1;
             nes->nmi = (nes->ppuctrl & 0x80) > 0;
             nes->ppustatus |= 0x80; // set vblank flag
@@ -86,6 +84,16 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
         }
 
         // [261] pre-render
+        if (scanline == 261) {
+            if (dot == 1) {
+                nes->ppustatus = 0;
+                continue;
+            }
+            if (dot >= 257 && dot <= 320) {
+                nes->oamaddr = 0;
+                continue;
+            }
+        }
     }
 
     return vblank_flag;
