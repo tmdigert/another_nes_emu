@@ -9,6 +9,7 @@
 #include "nes.h"
 #include "error.h"
 
+
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
     switch (op) {
@@ -246,6 +247,11 @@ int main(int argc, char* argv[]) {
     uint32_t nes_height = 240;
 
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    assert(SDL_Init(SDL_INIT_AUDIO) >= 0);
+    if(Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 2048) < 0){
+        printf( "SDL_Mixer failed to open with error: %s\n", Mix_GetError() );
+    }
+
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
     assert(window);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
@@ -254,46 +260,50 @@ int main(int argc, char* argv[]) {
     uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
     uint8_t* nes_pixels = malloc(nes_width * nes_height * 4);
 
+    uint8_t p1_env_flg;
+    uint8_t p1_vol_flg;
+    uint8_t p1_length_ctr;
+    uint8_t p1_duty;
+    uint8_t p1_timer_lo;
+    uint8_t p1_timer_hi;
+    uint8_t p1_env_val;
+    uint8_t p1_len;
+    uint8_t p1_stat;
 
-        uint8_t p1_env_flg;
-        uint8_t p1_vol_flg;
-        uint8_t p1_length_ctr;
-        uint8_t p1_duty;
-        uint8_t p1_timer_lo;
-        uint8_t p1_timer_hi;
-        uint8_t p1_env_val;
-        uint8_t p1_len;
+    uint8_t p2_env_flg;
+    uint8_t p2_vol_flg;
+    uint8_t p2_length_ctr;
+    uint8_t p2_duty;
+    uint8_t p2_timer_lo;
+    uint8_t p2_timer_hi;
+    uint8_t p2_env_val;
+    uint8_t p2_len;
+    uint8_t p2_stat;
 
-        uint8_t p2_env_flg;
-        uint8_t p2_vol_flg;
-        uint8_t p2_length_ctr;
-        uint8_t p2_duty;
-        uint8_t p2_timer_lo;
-        uint8_t p2_timer_hi;
-        uint8_t p2_env_val;
-        uint8_t p2_len;
+    uint8_t tri_lin_ctl;
+    uint8_t tri_lin_ld;
+    uint8_t tri_lo;
+    uint8_t tri_len_ld;
+    uint8_t tri_hi;
+    uint8_t tri_stat;
 
-        uint8_t tri_lin_ctl;
-        uint8_t tri_lin_ld;
-        uint8_t tri_lo;
-        uint8_t tri_len_ld;
-        uint8_t tri_hi;
-        uint8_t tri_stat;
+    uint8_t p1_count = 0;
+    uint8_t p2_count = 0;
+    uint8_t tri_count = 0;
 
-        Mix_Chunk *pulse_master = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *pulse_master = Mix_LoadWAV("square_256hz_no_duty.wav");
 
-        Mix_Chunk *p1_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p1_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p1_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p1_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
 
-        Mix_Chunk *p2_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p2_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p2_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
-        Mix_Chunk *p2_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
 
-        Mix_Chunk *tri_master = Mix_LoadWAV("square_256hz_no_duty.wav");
-
+    Mix_Chunk *tri_master = Mix_LoadWAV("tri_256hz_short.wav");
 
     // run n vblanks of rom
     int acc_cycle = 7;
@@ -308,52 +318,63 @@ int main(int argc, char* argv[]) {
             } */
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
-
-        p1_duty = (nes.pulse_1_1 >> 6);
-        p1_env_flg = (nes.pulse_1_1 << 2) >> 7;
-        p1_vol_flg = (nes.pulse_1_1 << 3) >> 7;
-        p1_env_val = (nes.pulse_1_1 << 4) >> 4;
-
-        p1_timer_lo = nes.pulse_1_3;
-
-        p1_length_ctr = nes.pulse_1_4 >> 3;
-        p1_length_ctr = (nes.pulse_1_4 << 5) >> 5;
-
-        p2_duty = (nes.pulse_1_1 >> 6);
-        p2_env_flg = (nes.pulse_1_1 << 2) >> 7;
-        p2_vol_flg = (nes.pulse_1_1 << 3) >> 7;
-        p2_env_val = (nes.pulse_1_1 << 4) >> 4;
-
-        p2_timer_lo = nes.pulse_1_3;
-
-        p2_length_ctr = nes.pulse_1_4 >> 3;
-        p2_length_ctr = (nes.pulse_1_4 << 5) >> 5;
-
-
-        tri_lin_ctl = nes.tri_1 >> 7;
-        tri_lin_ld = (nes.tri_1 << 1) >> 1;
-
-        tri_lo = nes.tri_2;
-        tri_len_ld = nes.tri_3 >> 3;
-        tri_hi = (nes.tri_3 >> 3) << 3;   //TODO: The code above seems to mangle the values. Re-write
-
-        if(nes.apu_read == 1){
-          tri_stat = (nes.apu_status >> 2) & 1; //correct deocde (I think?)
-
-        }
-
-        //if(SDL_GetTicks()%1000 == 0){
-          //nlog("%i\n", tri_stat);
-        //}
-
-        if(Mix_Playing(0) == 0 && tri_stat == 1 && nes.apu_read == 1){
-
-          Mix_PlayChannel(0, tri_master, 0);
-          nes.apu_read = 0;
-        }
-
         if (step_ppu(&nes, cycle)) {
             vblanks += 1;
+
+
+                        if(nes.apu_read == 1){
+
+                          nes.apu_read = 0;
+
+                          p1_duty = (nes.pulse_1_1 >> 6) & 0b11;
+                          p1_env_flg = (nes.pulse_1_1 >> 5) & 1;
+                          p1_vol_flg = (nes.pulse_1_1 >> 4) & 1;
+                          p1_env_val = (nes.pulse_1_1) & 0b1111;
+
+                          p1_timer_lo = nes.pulse_1_3;
+
+                          p1_length_ctr = nes.pulse_1_4 & 0b111;
+                          p1_length_ctr = (nes.pulse_1_4 >> 3) & 0b11111;
+
+                          p2_duty = (nes.pulse_2_1 >> 6) & 0b11;
+                          p2_env_flg = (nes.pulse_2_1 >> 5) & 1;
+                          p2_vol_flg = (nes.pulse_2_1 >> 4) & 1;
+                          p2_env_val = (nes.pulse_2_1) & 0b1111;
+
+                          p2_timer_lo = nes.pulse_2_3;
+
+                          p2_length_ctr = nes.pulse_2_4 & 0b111;
+                          p2_length_ctr = (nes.pulse_2_4 >> 3) & 0b11111;
+
+
+                          tri_lin_ctl = (nes.tri_1 >> 7) & 1;
+                          tri_lin_ld = (nes.tri_1) & 0b1111111;
+
+                          tri_lo = nes.tri_2;
+                          tri_len_ld = nes.tri_3 >> 3;
+                          tri_hi = nes.tri_3 & 0b111;
+
+                          //if(nes.apu_read == 1){
+                            p1_stat = (nes.apu_status) & 0b1;
+                            p2_stat = (nes.apu_status >> 1) & 0b1;
+                            tri_stat = (nes.apu_status >> 2) & 0b1; //should be >> 2, but no?
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          //if(SDL_GetTicks()%1000 == 0){
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          if(Mix_Playing(0) == 0 && tri_stat == 0b1){
+                            uint16_t tri_freq = tri_lo + (tri_hi * 0b100000000);
+                            nlog("%i\n", tri_stat);
+                            Mix_PlayChannel(0, tri_master, 0);
+                            tri_stat = 0;
+
+                            nes.apu_read = 0;
+                          }
+
+                        }
 
             // keyboard
             int keys = 0;
@@ -411,19 +432,18 @@ int main(int argc, char* argv[]) {
 
 exit:
 
-    Mix_FreeChunk(pulse_master);
-    Mix_FreeChunk(p1_duty_125);
-    Mix_FreeChunk(p1_duty_25);
-    Mix_FreeChunk(p1_duty_50);
-    Mix_FreeChunk(p1_duty_25n);
+Mix_FreeChunk(pulse_master);
+Mix_FreeChunk(p1_duty_125);
+Mix_FreeChunk(p1_duty_25);
+Mix_FreeChunk(p1_duty_50);
+Mix_FreeChunk(p1_duty_25n);
 
-    Mix_FreeChunk(p2_duty_125);
-    Mix_FreeChunk(p2_duty_25);
-    Mix_FreeChunk(p2_duty_50);
-    Mix_FreeChunk(p2_duty_25n);
+Mix_FreeChunk(p2_duty_125);
+Mix_FreeChunk(p2_duty_25);
+Mix_FreeChunk(p2_duty_50);
+Mix_FreeChunk(p2_duty_25n);
 
-    Mix_FreeChunk(tri_master);
-
+Mix_FreeChunk(tri_master);
 
     // free render
     SDL_FreeSurface(screen);
