@@ -51,6 +51,7 @@ struct Nes {
     uint8_t tri_1;
     uint8_t tri_2;
     uint8_t tri_3;
+    uint8_t tri_status;
 
 
     // PPU
