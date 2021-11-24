@@ -48,6 +48,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
                 nes->joy2 >>= 1;
                 return out;
             }
+            case 0x
             //
             default: {
                 error(UNIMPLEMENTED, "Unimplemented PPU reg read: 0x%04X", addr);
