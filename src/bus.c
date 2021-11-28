@@ -64,7 +64,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
     return cartridge_prg_read(&nes->cartridge, addr);
 }
 
-void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
+void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     // ram [0x0000, 0x1FFF]
     if (addr <= 0x1FFF) {
         nes->ram[addr & 0x07FF] = byte;
@@ -105,7 +105,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
             // ppudata
             case 0x2007: {
-                ppu_bus_write(nes, nes->ppuaddr, byte); 
+                ppu_bus_write(nes, nes->ppuaddr, byte);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return;
             }
@@ -118,11 +118,144 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
         }
     }
 
-    // APU and IO [0x4000, 0x4017]
+    // A and IO [0x4000, 0x4017]
     if (addr <= 0x4017) {
+      /*if(addr== 0x4015){
+        nlog("sound: %i\n", addr);
+      }
+      switch(0x4000 | (addr & 0b1100)){
+          case 0x4000: {
+            nlog("pulse_1_1");
+              nes->apu_read = 1;
+              nes->pulse_1_1 = byte;
+          }break;
+          nlog("pulse_1_2");
+          case 0x4001: {
+            nes->apu_read = 1;
+            nes->pulse_1_2 = byte;
+          }break;
+          case 0x4002: {
+            nes->apu_read = 1;
+            nes->pulse_1_3 = byte;
+          }break;
+          case 0x4003: {
+            nes->apu_read = 1;
+            nes->pulse_1_4 = byte;
+          }break;
+          case 0x4004: {
+            nes->apu_read = 1;
+            nes->pulse_2_1 = byte;
+          }break;
+          case 0x4005: {
+            nes->apu_read = 1;
+            nes->pulse_2_2 = byte;
+          }break;
+          case 0x4006: {
+            nes->apu_read = 1;
+            nes->pulse_2_3 = byte;
+          }break;
+          case 0x4007: {
+            nes->apu_read = 1;
+            nes->pulse_2_4 = byte;
+          }break;
+          case 0x4008: {
+            nlog("tri_1");
+            nes->apu_read = 1;
+            nes->tri_1 = byte;
+          }break;
+          case 0x4009: {
+              //error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
+              //assert(0);
+              int8_t placehold = 1;
+          }break;
+          case 0x400A: {
+            nlog("tri_2");
+            nes->apu_read = 1;
+            nes->tri_2 = byte;
+          }break;
+          case 0x400B: {
+            nlog("tri_3");
+            nes->apu_read = 1;
+            nes->tri_3 = byte;
+          }break;
+          case 0x4015:{
+            nlog("status write");
+            nes->apu_read = 1;
+            nes->apu_status = byte;
+          }break;
+          default: {
+              //error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
+              //assert(0);
+              int8_t placehold = 1;
+
+          //}*/
+
+     // }
         // TODO: implement
         switch (addr) {
             // input polling
+            case 0x4000: {
+              //nlog("pulse_1_1");
+                nes->apu_read = 1;
+                nes->pulse_1_1 = byte;
+            }break;
+            //nlog("pulse_1_2");
+            case 0x4001: {
+              nes->apu_read = 1;
+              nes->pulse_1_2 = byte;
+            }break;
+            case 0x4002: {
+              nes->apu_read = 1;
+              nes->pulse_1_3 = byte;
+            }break;
+            case 0x4003: {
+              nes->apu_read = 1;
+              nes->pulse_1_4 = byte;
+            }break;
+            case 0x4004: {
+              nes->apu_read = 1;
+              nes->pulse_2_1 = byte;
+            }break;
+            case 0x4005: {
+              nes->apu_read = 1;
+              nes->pulse_2_2 = byte;
+            }break;
+            case 0x4006: {
+              nes->apu_read = 1;
+              nes->pulse_2_3 = byte;
+            }break;
+            case 0x4007: {
+              nes->apu_read = 1;
+              nes->pulse_2_4 = byte;
+            }break;
+            case 0x4008: {
+              nlog("tri_1");
+              nes->apu_read = 1;
+              nes->tri_1 = byte;
+              nes->update_tri = 1;
+            }break;
+            case 0x4009: {
+                //error(UNIMPLEMENTED, "Unimplemented APU reg write: 0x%04X", addr);
+                //assert(0);
+                int8_t placehold = 1;
+            }break;
+            case 0x400A: {
+              nlog("tri_2");
+              nes->apu_read = 1;
+              nes->tri_2 = byte;
+              nes->update_tri = 1;
+            }break;
+            case 0x400B: {
+              nlog("tri_3");
+              nes->apu_read = 1;
+              nes->tri_3 = byte;
+              nes->update_tri = 1;
+            }break;
+            case 0x4015:{
+              nlog("status write");
+              nes->apu_read = 1;
+              nes->apu_status = byte;
+            }break;
             case 0x4016: {
                 // write 1 or 0?
                 if (byte == 1) {
@@ -147,6 +280,8 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
         }
     }
+
+
 
     // normally disabled, don't implement
     if (addr <= 0x401F) {
