@@ -7,6 +7,7 @@
 #include "nes.h"
 #include "error.h"
 #include "getopt.c"
+#include "settings.h"
 
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
@@ -226,6 +227,9 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
 #include "mapper0.h"
 
 int main(int argc, char** argv) {
+    //
+    SDL_Delay(400);
+
     // arg parsing
     char* filename = NULL;
     int opt = -1;
@@ -260,6 +264,9 @@ int main(int argc, char** argv) {
     };
     uint32_t nes_width = 256;
     uint32_t nes_height = 240;
+
+    struct Settings settings;
+    settings_create_from_default(&settings);
 
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
@@ -301,14 +308,14 @@ int main(int argc, char** argv) {
             }
             const uint8_t* keyboard = SDL_GetKeyboardState(&keys);
             uint8_t state = 0;
-            state |= keyboard[SDL_SCANCODE_RIGHT] << 7;
-            state |= keyboard[SDL_SCANCODE_LEFT] << 6;
-            state |= keyboard[SDL_SCANCODE_DOWN] << 5;
-            state |= keyboard[SDL_SCANCODE_UP] << 4;
-            state |= keyboard[SDL_SCANCODE_RETURN] << 3;
-            state |= keyboard[SDL_SCANCODE_RSHIFT] << 2;
-            state |= keyboard[SDL_SCANCODE_X] << 1;
-            state |= keyboard[SDL_SCANCODE_Z] << 0;
+            state |= keyboard[settings.right] << 7;
+            state |= keyboard[settings.left] << 6;
+            state |= keyboard[settings.down] << 5;
+            state |= keyboard[settings.up] << 4;
+            state |= keyboard[settings.start] << 3;
+            state |= keyboard[settings.select] << 2;
+            state |= keyboard[settings.b] << 1;
+            state |= keyboard[settings.a] << 0;
             nes.input1 = state;
 
             // render 
