@@ -6,6 +6,7 @@
 
 #include "nes.h"
 #include "error.h"
+#include "getopt.c"
 
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
@@ -224,10 +225,27 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
 #include <assert.h>
 #include "mapper0.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
+    // arg parsing
+    char* filename = NULL;
+    int opt = -1;
+    while ((opt = getopt(argc, argv, "f:h")) != -1) {
+        switch (opt) {
+            case 'f':
+                filename = optarg;
+                break;
+            case 'h':
+                printf("  -f [arg_name]  --  Specifies rom filename as arg_name.\n");
+                printf("  -h             --  Print command line arguments.\n");
+                break;
+        }
+    }
+
+    if (filename == NULL) return -1;
+
     // load ROM
     struct Cartridge cartridge;
-    if (load_cartridge_from_file("donkeykong.nes", &cartridge) > 0) return -1;
+    if (load_cartridge_from_file(filename, &cartridge) > 0) return -1;
 
     // load nes
     struct Nes nes;

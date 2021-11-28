@@ -57,7 +57,7 @@ int load_cartridge_from_file(char* filename, struct Cartridge* cartridge) {
     // close all
 close:
     free(data);
-    fclose(fp);
+    if (fp != NULL) fclose(fp); // C is a great language
     return err;
 }
 
