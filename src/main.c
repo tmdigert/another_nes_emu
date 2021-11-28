@@ -3,9 +3,32 @@
 #include <SDL2/SDL_surface.h>
 #include <stdio.h>
 #include <string.h>
+#include <SDL2/SDL_audio.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "nes.h"
 #include "error.h"
+
+
+int genTone(Mix_Chunk* tone, int fade, int chan, int freq, uint form_dat, int chan_dat){
+
+    SDL_AudioCVT converter;
+
+    SDL_BuildAudioCVT(&converter, form_dat, chan_dat, freq, form_dat, chan_dat, 44100);
+
+    converter.buf = (uint8_t*) SDL_malloc(converter.len * converter.len_mult);
+    converter.len = tone->alen;
+
+    SDL_memcpy(converter.buf, tone->abuf, tone->alen);
+
+    SDL_ConvertAudio(&converter);
+
+    tone->alen = converter.len_cvt;
+    tone->abuf = converter.buf;
+
+    return 0;
+
+}
 
 // opcode ID to name lookup table
 char* lookup_opcode(uint8_t op) {
@@ -64,7 +87,7 @@ char* lookup_opcode(uint8_t op) {
         case 0x68: return "pla";
         case 0x08: return "php";
         case 0x28: return "plp";
-        case 0x86: case 0x96: case 0x8E: return "stx"; 
+        case 0x86: case 0x96: case 0x8E: return "stx";
         case 0x84: case 0x94: case 0x8C: return "sty";
         default: return "inv";
     }
@@ -114,7 +137,7 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                 uint8_t attribute_data = ppu_bus_read(nes, attribute_base + attribute_index);
 
                 // form patterntable base
-                uint16_t pattern_table_base = nametable_data << 4 | nes->ppuctrl << 8 & 0b1000000000000; 
+                uint16_t pattern_table_base = nametable_data << 4 | nes->ppuctrl << 8 & 0b1000000000000;
 
                 // form palette id
                 uint8_t x_sub_tile = (tile8_x/2) % 2;
@@ -144,7 +167,7 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     }
                 }
             }
-        } 
+        }
     }
 
     // more palettes
@@ -198,7 +221,7 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                 //
                 uint8_t low_bits = ppu_bus_read(nes, (pattern_table_base + spr) | bit_plane); // low bits for 8 pixels
                 uint8_t high_bits = ppu_bus_read(nes, (pattern_table_base + spr) | sprite_size | bit_plane); // high bits for 8 pixels
-    
+
                 //
                 for (uint8_t pixel_index = 0; pixel_index < sprite_size; pixel_index++) {
                     //
@@ -206,12 +229,12 @@ void fill_nametable(struct Nes* nes, uint8_t* pixels) {
                     low_bits >>= 1;
                     high_bits >>= 1;
                     if (pixel == 0) continue;
-    
+
                     //
                     uint16_t pixel_x = byte3 + ((byte2 & 0x40) > 0 ? pixel_index : sprite_size - 1 - pixel_index);
                     uint16_t pixel_y = 1 + byte0 + spr * 8 + ((byte2 & 0x80) > 0 ? sprite_size - 1 - bit_plane : bit_plane); // this ternary possibly wrong
                     uint32_t index = pixel_x + pixel_y * 2 * nametable_width * tile_size;
-    
+
                     //
 
                     pixels[index] = spr_palette[palette_id][pixel];
@@ -235,15 +258,20 @@ int main(int argc, char* argv[]) {
 
     // Render
     uint8_t lookup[] = {
-        84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        152, 150, 152, 8, 76, 196, 48, 50, 236, 92, 30, 228, 136, 20, 176, 160, 20, 100, 152, 34, 32, 120, 60, 0, 84, 90, 0, 40, 114, 0, 8, 124, 0, 0, 118, 40, 0, 102, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        236, 238, 236, 76, 154, 236, 120, 124, 236, 176, 98, 236, 228, 84, 236, 236, 88, 180, 236, 106, 100, 212, 136, 32, 160, 170, 0, 116, 196, 0, 76, 208, 32, 56, 204, 108, 56, 180, 204, 60, 60, 60, 0, 0, 0, 0, 0, 0, 
+        84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        152, 150, 152, 8, 76, 196, 48, 50, 236, 92, 30, 228, 136, 20, 176, 160, 20, 100, 152, 34, 32, 120, 60, 0, 84, 90, 0, 40, 114, 0, 8, 124, 0, 0, 118, 40, 0, 102, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        236, 238, 236, 76, 154, 236, 120, 124, 236, 176, 98, 236, 228, 84, 236, 236, 88, 180, 236, 106, 100, 212, 136, 32, 160, 170, 0, 116, 196, 0, 76, 208, 32, 56, 204, 108, 56, 180, 204, 60, 60, 60, 0, 0, 0, 0, 0, 0,
         236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160, 0, 0, 0, 0, 0, 0
     };
     uint32_t nes_width = 256;
     uint32_t nes_height = 240;
 
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    assert(SDL_Init(SDL_INIT_AUDIO) >= 0);
+    if(Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 2048) < 0){
+        printf( "SDL_Mixer failed to open with error: %s\n", Mix_GetError() );
+    }
+
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
     assert(window);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
@@ -251,6 +279,51 @@ int main(int argc, char* argv[]) {
 
     uint8_t* screen_pixels = malloc(nes_width * nes_height * 3);
     uint8_t* nes_pixels = malloc(nes_width * nes_height * 4);
+
+    uint8_t p1_env_flg;
+    uint8_t p1_vol_flg;
+    uint8_t p1_length_ctr;
+    uint8_t p1_duty;
+    uint8_t p1_timer_lo;
+    uint8_t p1_timer_hi;
+    uint8_t p1_env_val;
+    uint8_t p1_len;
+    uint8_t p1_stat;
+
+    uint8_t p2_env_flg;
+    uint8_t p2_vol_flg;
+    uint8_t p2_length_ctr;
+    uint8_t p2_duty;
+    uint8_t p2_timer_lo;
+    uint8_t p2_timer_hi;
+    uint8_t p2_env_val;
+    uint8_t p2_len;
+    uint8_t p2_stat;
+
+    uint8_t tri_lin_ctl;
+    uint8_t tri_lin_ld;
+    uint8_t tri_lo;
+    uint8_t tri_len_ld;
+    uint8_t tri_hi;
+    uint8_t tri_stat;
+
+    uint8_t p1_count = 0;
+    uint8_t p2_count = 0;
+    uint8_t tri_count = 0;
+
+    Mix_Chunk *pulse_master = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p1_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p2_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *tri_master = Mix_LoadWAV("tri_256hz_short.wav");
 
     // run n vblanks of rom
     int acc_cycle = 7;
@@ -262,11 +335,95 @@ int main(int argc, char* argv[]) {
             /*if (nes.pc >= 0xF11E && nes.pc <= 0xF139) {
                 uint8_t next = cpu_bus_read(&nes, nes.pc);
                 nlog("%04X  %02X    %s                             A:%02X X:%02X Y:%02X P:%02X SP:%02X", nes.pc, next, lookup_opcode(next), nes.acc, nes.x, nes.y, nes.status, nes.sp);
-            } */      
+            } */
+        //if((nes.micro_addr > 0x4000) && (nes.micro_addr < 0x4016)){
+        if(nes.micro_addr == 0x4015){
+          nlog("addr: %i\n", nes.micro_addr);
+        }
         int start = SDL_GetTicks();
         int cycle = step_cpu(&nes);
         if (step_ppu(&nes, cycle)) {
             vblanks += 1;
+
+                        if(nes.apu_read == 1){
+
+                          nes.apu_read = 0;
+
+                          p1_duty = (nes.pulse_1_1 >> 6) & 0b11;
+                          p1_env_flg = (nes.pulse_1_1 >> 5) & 1;
+                          p1_vol_flg = (nes.pulse_1_1 >> 4) & 1;
+                          p1_env_val = (nes.pulse_1_1) & 0b1111;
+
+                          p1_timer_lo = nes.pulse_1_3;
+
+                          p1_length_ctr = nes.pulse_1_4 & 0b111;
+                          p1_length_ctr = (nes.pulse_1_4 >> 3) & 0b11111;
+
+                          p2_duty = (nes.pulse_2_1 >> 6) & 0b11;
+                          p2_env_flg = (nes.pulse_2_1 >> 5) & 1;
+                          p2_vol_flg = (nes.pulse_2_1 >> 4) & 1;
+                          p2_env_val = (nes.pulse_2_1) & 0b1111;
+
+                          p2_timer_lo = nes.pulse_2_3;
+
+                          p2_length_ctr = nes.pulse_2_4 & 0b111;
+                          p2_length_ctr = (nes.pulse_2_4 >> 3) & 0b11111;
+
+
+                          tri_lin_ctl = (nes.tri_1 >> 7) & 1;
+                          tri_lin_ld = (nes.tri_1) & 0b1111111;
+
+                          tri_lo = nes.tri_2;
+                          tri_len_ld = nes.tri_3 >> 3;
+                          tri_hi = nes.tri_3 & 0b111;
+
+
+
+                          //if(nes.apu_read == 1){
+                            p1_stat = (nes.apu_status) & 0b1;
+                            p2_stat = (nes.apu_status >> 1) & 0b1;
+                            tri_stat = (nes.apu_status >> 2) & 0b1;
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          //if(SDL_GetTicks()%1000 == 0){
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          if(Mix_Playing(0) == 0 && tri_stat == 0b1 && nes.update_tri == 1){
+
+                            int tri_timer = (int)(tri_lo + (tri_hi * 0b100000000));
+                            int tri_freq = (1789773/(16*(tri_timer + 1)));
+
+                            int tri_count = (int)(4*60*tri_freq);
+                            //int tri_timer_int = checked((int)tri_timer_int);
+
+                            uint16_t frm_dat;
+                          	int chan_dat;
+
+                          	Mix_QuerySpec(NULL, &frm_dat, &chan_dat);
+
+                            if(tri_lin_ctl == 0){
+
+                            }
+                            else{
+
+                            }
+
+                            nlog("%i\n", tri_lin_ld);
+                            nlog("%i\n", tri_freq);
+                            nlog("tri_ctl: %i\n", tri_lin_ctl);
+
+
+
+                            Mix_PlayChannel(0, tri_master, 0);
+                            tri_stat = 0;
+                            nes.update_tri = 0;
+
+                            nes.apu_read = 0;
+                          }
+
+                        }
 
             // keyboard
             int keys = 0;
@@ -293,7 +450,7 @@ int main(int argc, char* argv[]) {
             state |= keyboard[SDL_SCANCODE_Z] << 0;
             nes.input1 = state;
 
-            // render 
+            // render
             fill_nametable(&nes, nes_pixels);
 
             // convert NES pixel to RGB pixels
@@ -305,13 +462,13 @@ int main(int argc, char* argv[]) {
                     screen_pixels[dst_i * 3 + 1] = lookup[nes_pixels[src_i] * 3 + 1];
                     screen_pixels[dst_i * 3 + 2] = lookup[nes_pixels[src_i] * 3 + 2];
                 }
-            }     
+            }
 
             // blit and render (vsync?)
             SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(screen_pixels, 256, 240, 24, 256 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
             assert(surface);
             SDL_BlitSurface(surface, 0, screen, 0);
-            SDL_UpdateWindowSurface(window); 
+            SDL_UpdateWindowSurface(window);
             SDL_FreeSurface(surface);
 
             int end = SDL_GetTicks();
@@ -323,6 +480,19 @@ int main(int argc, char* argv[]) {
     }
 
 exit:
+
+Mix_FreeChunk(pulse_master);
+Mix_FreeChunk(p1_duty_125);
+Mix_FreeChunk(p1_duty_25);
+Mix_FreeChunk(p1_duty_50);
+Mix_FreeChunk(p1_duty_25n);
+
+Mix_FreeChunk(p2_duty_125);
+Mix_FreeChunk(p2_duty_25);
+Mix_FreeChunk(p2_duty_50);
+Mix_FreeChunk(p2_duty_25n);
+
+Mix_FreeChunk(tri_master);
 
     // free render
     SDL_FreeSurface(screen);
