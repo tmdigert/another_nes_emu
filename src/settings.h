@@ -14,6 +14,6 @@ struct Settings {
 	SDL_Scancode right;
 };
 
-void settings_load_from_file(struct Settings*, const char*);
+int settings_load_from_file(struct Settings*, const char*);
 void settings_create_from_default(struct Settings*);
-void settings_write_to_file(struct Settings*, const char*);
+int settings_write_to_file(struct Settings*, const char*);

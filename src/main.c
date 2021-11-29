@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
     uint32_t nes_height = 240;
 
     struct Settings settings;
-    settings_create_from_default(&settings);
+    settings_load_from_file(&settings, "settings.conf");
 
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, 256, 240, 0);
@@ -348,6 +348,9 @@ int main(int argc, char** argv) {
     }
 
 exit:
+
+    //
+    settings_write_to_file(&settings, "settings.conf");
 
     // free render
     SDL_FreeSurface(screen);
