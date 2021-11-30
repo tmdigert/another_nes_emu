@@ -6,15 +6,37 @@
 
 #include "error.h"
 #include "nes.h"
+#include "getopt.c"
+#include "settings.h"
 
 #include <assert.h>
 #include "mapper0.h"
 #include "debug.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
+    //
+    SDL_Delay(400);
+
+    // arg parsing
+    char* filename = NULL;
+    int opt = -1;
+    while ((opt = getopt(argc, argv, "f:h")) != -1) {
+        switch (opt) {
+            case 'f':
+                filename = optarg;
+                break;
+            case 'h':
+                printf("  -f [arg_name]  --  Specifies rom filename as arg_name.\n");
+                printf("  -h             --  Print command line arguments.\n");
+                break;
+        }
+    }
+
+    if (filename == NULL) return -1;
+
     // load ROM
     struct Cartridge cartridge;
-    if (load_cartridge_from_file("donkeykong.nes", &cartridge) > 0) return -1;
+    if (load_cartridge_from_file(filename, &cartridge) > 0) return -1;
 
     // load nes
     struct Nes nes;
@@ -27,6 +49,9 @@ int main(int argc, char* argv[]) {
         236, 238, 236, 76, 154, 236, 120, 124, 236, 176, 98, 236, 228, 84, 236, 236, 88, 180, 236, 106, 100, 212, 136, 32, 160, 170, 0, 116, 196, 0, 76, 208, 32, 56, 204, 108, 56, 180, 204, 60, 60, 60, 0, 0, 0, 0, 0, 0, 
         236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160, 0, 0, 0, 0, 0, 0
     };
+
+    struct Settings settings;
+    settings_load_from_file(&settings, "settings.conf");
 
     // init SDL video
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
@@ -87,14 +112,14 @@ int main(int argc, char* argv[]) {
             }
             const uint8_t* keyboard = SDL_GetKeyboardState(&keys);
             uint8_t state = 0;
-            state |= keyboard[SDL_SCANCODE_RIGHT] << 7;
-            state |= keyboard[SDL_SCANCODE_LEFT] << 6;
-            state |= keyboard[SDL_SCANCODE_DOWN] << 5;
-            state |= keyboard[SDL_SCANCODE_UP] << 4;
-            state |= keyboard[SDL_SCANCODE_RETURN] << 3;
-            state |= keyboard[SDL_SCANCODE_RSHIFT] << 2;
-            state |= keyboard[SDL_SCANCODE_X] << 1;
-            state |= keyboard[SDL_SCANCODE_Z] << 0;
+            state |= keyboard[settings.right] << 7;
+            state |= keyboard[settings.left] << 6;
+            state |= keyboard[settings.down] << 5;
+            state |= keyboard[settings.up] << 4;
+            state |= keyboard[settings.start] << 3;
+            state |= keyboard[settings.select] << 2;
+            state |= keyboard[settings.b] << 1;
+            state |= keyboard[settings.a] << 0;
             nes.input1 = state;
 
             // convert NES pixel to RGB pixels
@@ -124,6 +149,9 @@ int main(int argc, char* argv[]) {
     }
 
 exit:
+
+    //
+    settings_write_to_file(&settings, "settings.conf");
 
     // free render
     SDL_DestroyWindow(window);
