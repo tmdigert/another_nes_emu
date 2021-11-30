@@ -57,6 +57,13 @@ int main(int argc, char** argv) {
 
     // init SDL video
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    // init SDL audio
+    assert(SDL_Init(SDL_INIT_AUDIO) >= 0);
+    
+    // init SDL mixer (audio)
+    if(Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 2048) < 0){
+        nlog("SDL_Mixer failed to open, threw error: %s\n", Mix_GetError());
+    }
 
     // create windows
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
