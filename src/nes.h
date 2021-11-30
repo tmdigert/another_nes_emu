@@ -36,6 +36,31 @@ struct Nes {
     // CPU micro
     uint16_t micro_addr;
     uint8_t oam_delay;
+    
+    //APU
+    uint8_t apu_read; //set when registers update, then main sets to 0 after read
+    uint8_t apu_status;
+
+    uint8_t pulse_1_1;
+    uint8_t pulse_1_2;
+    uint8_t pulse_1_3;
+    uint8_t pulse_1_4;
+    uint8_t update_p1;
+
+    uint8_t pulse_2_1;
+    uint8_t pulse_2_2;
+    uint8_t pulse_2_3;
+    uint8_t pulse_2_4;
+    uint8_t update_p2;
+
+    uint8_t tri_1;
+    uint8_t tri_2;
+    uint8_t tri_3;
+    uint8_t tri_status;
+    uint8_t update_tri;
+
+    uint8_t frame_count;
+
 
     // PPU
     uint8_t ciram[0x0800];
