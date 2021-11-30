@@ -14,10 +14,10 @@
 #include "debug.h"
 
 int main(int argc, char** argv) {
-    //
+    // Slight delay, for IO reasons.
     SDL_Delay(400);
 
-    // arg parsing
+    // Parse arguments.
     char* filename = NULL;
     int opt = -1;
     while ((opt = getopt(argc, argv, "f:h")) != -1) {
@@ -32,17 +32,18 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Return early is no filename is set.
     if (filename == NULL) return -1;
 
-    // load ROM
+    // Declare and load cartridge from file.
     struct Cartridge cartridge;
     if (load_cartridge_from_file(filename, &cartridge) > 0) return -1;
 
-    // load nes
+    // Declare and initialize Nes struct.
     struct Nes nes;
     init_nes(&nes, cartridge);
 
-    // savestates (NOTE: These wont work on non-NROM games!")
+    // 12 Savestates (NOTE: These wont work on non-NROM games!").
     struct Nes* savestates[12] = { NULL };
 
     // Render
@@ -53,53 +54,41 @@ int main(int argc, char** argv) {
         236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160, 0, 0, 0, 0, 0, 0
     };
 
-    // settings
+    // Declare and load settings from file. A new settings is made if settings.conf is not found.
     struct Settings settings;
     settings_load_from_file(&settings, "settings.conf");
 
-    // init SDL video
+    // Initialize SDL vdieo.
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
-    // create windows
+    // Create main SDL window.
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     assert(window);
-    //SDL_Window* nametable_window = SDL_CreateWindow("NES Emu: Nametable", 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 0);
-    //assert(nametable_window);
 
-    // allocate pixel space
-    uint8_t* screen_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
-    uint8_t* nes_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT);
+    // Declare space for screen output. 
+    uint8_t screen_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
+    // Declare space for PPU output.
+    uint8_t nes_pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
 
-    // run n vblanks of rom
-    int acc_cycle = 7;
+    // The main game loop. Runs at 60 Hz.
     int vblanks = 0;
-
     uint8_t next = 0;
     while (1) {
+        // For sleep timing.
         int start = SDL_GetTicks();
-        int cycle = step_cpu(&nes);
 
-        if (step_ppu(&nes, 3 * cycle, nes_pixels)) {
+        // Step the CPU and PPU components. This is the heart of the emulation.
+        int cycle = step_cpu(&nes);
+        int vblank = step_ppu(&nes, 3 * cycle, nes_pixels); // 1 CPU clock = 3 PPU clocks
+
+        // Once per frame logic.
+        if (vblank) {
             vblanks += 1;
 
-            // debug render nametable
-            /*uint8_t nametable_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
-            draw_ppu_nametables(&nes, nametable_pixels);
-            uint8_t nametable_rgb[SCREEN_WIDTH * SCREEN_HEIGHT * 4 * 3];
-            for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT * 4; i++) {
-                nametable_rgb[3 * i + 0] = lookup[3 * nametable_pixels[i] + 0];
-                nametable_rgb[3 * i + 1] = lookup[3 * nametable_pixels[i] + 1];
-                nametable_rgb[3 * i + 2] = lookup[3 * nametable_pixels[i] + 2];
-            }
-            SDL_Surface* temp = SDL_CreateRGBSurfaceFrom(nametable_rgb, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 24, 3 * 2 * SCREEN_WIDTH, 0x0000FF, 0x00FF00, 0xFF0000, 0);
-            SDL_BlitSurface(temp, 0, SDL_GetWindowSurface(nametable_window), 0);
-            SDL_UpdateWindowSurface(nametable_window); 
-            SDL_FreeSurface(temp);*/
-
-            // TEMP
+            // Sprite drawing is currently not cycle accurate
             draw_oam_sprites(&nes, nes_pixels);
 
-            // keyboard
+            // Poll window events.
             int keys = 0;
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
@@ -114,6 +103,8 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+
+            // Check keyboard input, pack and record it in Nes object.
             const uint8_t* keyboard = SDL_GetKeyboardState(&keys);
             uint8_t state = 0;
             state |= keyboard[settings.right] << 7;
@@ -126,6 +117,7 @@ int main(int argc, char** argv) {
             state |= keyboard[settings.a] << 0;
             nes.input1 = state;
 
+            // Savestate logic.
             char fcodes[12];
             fcodes[0] = keyboard[SDL_SCANCODE_F1];
             fcodes[1] = keyboard[SDL_SCANCODE_F2];
@@ -150,11 +142,7 @@ int main(int argc, char** argv) {
                 }
             }
 
-            if (keyboard[SDL_SCANCODE_F1]) {
-
-            }
-
-            // convert NES pixel to RGB pixels
+            // Convert NES PPU output to RGB for screen render output.
             for (int y = 0; y < SCREEN_HEIGHT; y++) {
                 for (int x = 0; x < SCREEN_WIDTH; x++) {
                     uint32_t dst_i = x + y * SCREEN_WIDTH;
@@ -165,34 +153,28 @@ int main(int argc, char** argv) {
                 }
             }     
 
-            // blit and render (vsync?)
+            // Render RGB pixels to screen.
             SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(screen_pixels, 256, 240, 24, 256 * 3, 0x0000FF, 0x00FF00, 0xFF0000, 0);
             assert(surface);
             SDL_BlitSurface(surface, 0, SDL_GetWindowSurface(window), 0);
             SDL_UpdateWindowSurface(window); 
             SDL_FreeSurface(surface);
 
+            // Sleep for (16ms - time_taken).
             int end = SDL_GetTicks();
             if (end - start < 16) {
                 SDL_Delay(16 - (end - start));
             }
         };
-        acc_cycle += cycle;
     }
 
 exit:
-
-    //
+    // Write settings to settings.conf.
     settings_write_to_file(&settings, "settings.conf");
 
-    // free render
+    // Free main SDL window.
     SDL_DestroyWindow(window);
-    //SDL_DestroyWindow(nametable_window);
-    free(screen_pixels);
-    free(nes_pixels);
 
-    for (int i = 0; i < 12; i++) free(savestates[i]);
-
-    // free nes
+    // Free Nes object.
     free_nes(&nes);
 }

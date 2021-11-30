@@ -5,30 +5,30 @@
 #include "error.h"
 
 uint16_t step_cpu(struct Nes* nes) {
-    // perform reset if necessary
+    // Perform reset if necessary.
     if (nes->reset) {
         nes->reset = 0;
         
-        // reset suppresses the writes done when pushing to the stack, so just dec stack pointer
+        // Reset pushes to the stack, but stack writes are disabled, so only the stack pointer is changed.
         nes->sp -= 3;
         
-        // read the reset vector (always starts at 0xFFFC)
+        // Read the reset vector (this is fixed, starting at 0xFFFC).
         uint8_t lo = cpu_bus_read(nes, 0xFFFC);
         uint8_t hi = cpu_bus_read(nes, 0xFFFD);
         nes->pc = make_u16(hi, lo);
 
-        // set flag
+        // Set interrupt flag.
         set_flag(nes, STATUS_FLAG_INTERRUPT, 1);
 
-        // all interrupts take 7 cycles
+        // All interrupts are 7 cycles.
         return 7;
     }
 
-    // perform nmi if necessary
+    // Perform NMI if necessary.
     if (nes->nmi) {
         nes->nmi = 0;
         
-        // push
+        // Push PC and status register to stack.
         cpu_bus_write(nes, 0x0100 | nes->sp, nes->pc >> 8);
         nes->sp -= 1;
         cpu_bus_write(nes, 0x0100 | nes->sp, nes->pc & 0xFF);
@@ -36,26 +36,26 @@ uint16_t step_cpu(struct Nes* nes) {
         cpu_bus_write(nes, 0x0100 | nes->sp, nes->status);
         nes->sp -= 1;
 
-        // read the nmi vector (always starts at 0xFFFA)
+        // Read the NMI vector (this is fixed, starting at 0xFFFA).
         uint8_t lo = cpu_bus_read(nes, 0xFFFA);
         uint8_t hi = cpu_bus_read(nes, 0xFFFB);
         nes->pc = make_u16(hi, lo);
 
-        // set flag
+        // Set interrupt flag.
         set_flag(nes, STATUS_FLAG_INTERRUPT, 1);
 
-        // all interrupts take 7 cycles
+        // All interrupts are 7 cycles.
         return 7;
     }
 
-    // fetch first opcode
+    // Fetch opcode byte, increment PC.
     uint8_t op = cpu_bus_read(nes, nes->pc);
     nes->pc += 1;
 
-    // Big lookup table for parsing op
-    uint16_t cycles = 0xFF; // initialization doesn't matter. Still, no opcode can take 255 cycles
-    uint8_t oops = 0x00; // cycles to add due to a 16 bit boundary cross
-    uint8_t branch = 0x00; // cycles to add due to a branch instruction
+    // Big lookup table, for parsing the opcode byte fetched above.
+    uint16_t cycles = 0xFFFF; // Should never actually be 0xFFFF after the switch. 
+    uint8_t oops = 0x00; // Cycles to add due to a 16 bit boundary cross.
+    uint8_t branch = 0x00; // Cycles to add due to a branch instruction.
     switch (op) {
         // adc
         case 0x69: cycles = (addrm_imm(nes), adc(nes), 2); break;
@@ -302,12 +302,16 @@ uint16_t step_cpu(struct Nes* nes) {
         break;
     }
 
-    // add oam delay
+    //
+    assert(cycles != 0xFFFF);
+
+    // Add OAM delay, if OAM move occured this instruction.
     if (nes->oam_delay) {
         cycles += 514;
         nes->oam_delay = 0;
     }
 
+    // Return total cycles taken.
     return cycles;
 }
 
