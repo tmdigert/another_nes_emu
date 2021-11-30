@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 
 struct Settings {
-	// keybinds
+	// Keybinds.
 	SDL_Scancode a;
 	SDL_Scancode b;
 	SDL_Scancode start;

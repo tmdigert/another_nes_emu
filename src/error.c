@@ -6,8 +6,6 @@
 // rip globals
 int error_counter = 0;
 
-// error logs eventually
-
 void inner_nlog(int line, char* file, char* string, ...) {
     va_list args;
     va_start(args, string);
@@ -35,11 +33,13 @@ int inner_error(int line, char* file, int err, char* string, ...) {
     return error_counter;
 }
 
+// TODO: map error ID to associated error message.
 char* get_error_msg(int errorid) {
     assert(0);
 }
 
-char get_error_id(int errorid) {
+// TODO: map error ID to associated error type.
+char get_error_type(int errorid) {
     assert(0);
 }
 
