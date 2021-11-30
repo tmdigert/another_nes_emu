@@ -1,3 +1,5 @@
+#pragma once
+
 #define INVALID_INPUT 0
 #define IO_ERROR 1
 #define ALLOC_ERROR 2

@@ -4,7 +4,7 @@
 #include "nes.h"
 #include "error.h"
 
-uint8_t step_cpu(struct Nes* nes) {
+uint16_t step_cpu(struct Nes* nes) {
     // perform reset if necessary
     if (nes->reset) {
         nes->reset = 0;
@@ -53,7 +53,7 @@ uint8_t step_cpu(struct Nes* nes) {
     nes->pc += 1;
 
     // Big lookup table for parsing op
-    uint8_t cycles = 0xFF; // initialization doesn't matter. Still, no opcode can take 255 cycles
+    uint16_t cycles = 0xFF; // initialization doesn't matter. Still, no opcode can take 255 cycles
     uint8_t oops = 0x00; // cycles to add due to a 16 bit boundary cross
     uint8_t branch = 0x00; // cycles to add due to a branch instruction
     switch (op) {
@@ -300,6 +300,12 @@ uint8_t step_cpu(struct Nes* nes) {
         fflush(stdout);
         assert(0);
         break;
+    }
+
+    // add oam delay
+    if (nes->oam_delay) {
+        cycles += 514;
+        nes->oam_delay = 0;
     }
 
     return cycles;

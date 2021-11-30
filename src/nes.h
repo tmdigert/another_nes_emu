@@ -1,5 +1,8 @@
+#pragma once
+
 #include <stdint.h>
 #include "cartridge.h"
+#include "defines.h"
 
 #define STATUS_FLAG_CARRY       0
 #define STATUS_FLAG_ZERO        1
@@ -32,6 +35,7 @@ struct Nes {
     uint8_t nmi;
     // CPU micro
     uint16_t micro_addr;
+    uint8_t oam_delay;
 
     // PPU
     uint8_t ciram[0x0800];
@@ -44,6 +48,7 @@ struct Nes {
     uint8_t oamaddr; // ppu register @ 0x2003
     uint16_t ppuscroll; // ppu register @ 0x2005
     uint16_t ppuaddr; // ppu register @ 0x2006
+    uint8_t read_buffer; // used by ppuaddr
 };
 
 uint16_t make_u16(uint8_t hi, uint8_t lo);
@@ -53,8 +58,8 @@ void init_nes(struct Nes*, struct Cartridge);
 void free_nes(struct Nes*);
 
 // exec
-uint8_t step_cpu(struct Nes*);
-uint8_t step_ppu(struct Nes*, uint8_t);
+uint16_t step_cpu(struct Nes*);
+uint8_t step_ppu(struct Nes*, uint8_t, uint8_t*);
 void reset(struct Nes*);
 
 // misc

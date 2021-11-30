@@ -17,17 +17,21 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
             case 0x2002: {
                 uint8_t out = nes->ppustatus;
                 nes->ppustatus &= 0x7F;
+                nes->ppuaddr = 0; // is this correct?
                 return out;
             }
             // ppuadata
             case 0x2007: {
-                uint8_t out = ppu_bus_read(nes, nes->ppuaddr);
+                uint8_t out = nes->read_buffer;
+                nes->read_buffer = ppu_bus_read(nes, nes->ppuaddr);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
-                return out;
+                // return read_buffer immediately if in palette range
+                return ((nes->ppuaddr & 0x3FFF) < 0x3F00) ? out : nes->read_buffer;
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", addr);
+                return 0x7F;
+                error(UNIMPLEMENTED, "Unimplemented bus read: 0x%04X", 0x2000 | (addr & 0b111));
                 assert(0);
             }
         }
@@ -78,7 +82,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             // ppuctrl
             case 0x2000: {
                 nes->ppuctrl = byte;
-                assert((nes->ppuctrl & 0b11) == 0);
                 return;
             }
             // ppumask
@@ -111,7 +114,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
             //
             default: {
-                error(UNIMPLEMENTED, "Unimplemented bus write: 0x%04X", addr);
+                error(UNIMPLEMENTED, "Unimplemented bus write: 0x%04X <- 0x%02X", addr, byte);
                 assert(0);
                 return;
             }
@@ -139,6 +142,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                     nes->oam[i] = cpu_bus_read(nes, (byte << 8) + i);
                     i++;
                 } while (i != i_start);
+                nes->oam_delay = 1;
                 return;
             };
             // do not abort on unhandled APU
@@ -169,34 +173,23 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
 
     // ciram [0x2000, 0x3EFF]
     if (addr <= 0x3EFF) {
-        // clip to 0x2000
-        addr = 0x2000 | (addr & 0xFFF);
+        // horizontal
+        /*uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b100000000000;
+        addr = ((addr & mirror_mask) >> 1) | (addr & ciram_mask);*/
 
-        // TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
-        if (addr < 0x2400) {
-            return nes->ciram[addr - 0x2000];
-        }
-        // in section B
-        if (addr < 0x2800) {
-            return nes->ciram[addr - 0x2400];
-        }
-        // in section C
-        if (addr < 0x2C00) {
-            return nes->ciram[addr - 0x2400];
-        }
-        // in section D
-        if (addr < 0x3000) {
-            return nes->ciram[addr - 0x2800];
-        }
+        // vertical
+        uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b010000000000;
+        addr = addr & (mirror_mask | ciram_mask);
 
-        // unreachable, abort
-        error(UNREACHABLE, "This line should not be reachable");
-        assert(0);
+        // 
+        return nes->ciram[addr];
     }
 
     // palette [0x3F00, 0x3FFF]
     if (addr <= 0x3FFF) {
-        if (addr % 4 == 0) return nes->palette[0];
+        if (addr % 4 == 0) return nes->palette[addr & 0x0F];
         else return nes->palette[addr & 0x1F];
     }
 
@@ -217,40 +210,27 @@ void ppu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 
     // ciram [0x2000, 0x3EFF]
     if (addr <= 0x3EFF) {
-        // clip to 0x2000
-        addr = 0x2000 | addr & 0xFFF;
+        // horizontal
+        /*uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b100000000000;
+        addr = ((addr & mirror_mask) >> 1) | (addr & ciram_mask);*/
 
-        // TODO: this assumes horizontal mirroring, should probably be implemented by the cartridge
-        if (addr < 0x2400) {
-            nes->ciram[addr - 0x2000] = byte;
-            return;
-        }
-        // in section B
-        if (addr < 0x2800) {
-            nes->ciram[addr - 0x2400] = byte;
-            return;
-        }
-        // in section C
-        if (addr < 0x2C00) {
-            nes->ciram[addr - 0x2400] = byte;
-            return;
-        }
-        // in section D
-        if (addr < 0x3000) {
-            nes->ciram[addr - 0x2800] = byte;
-            return;
-        }
+        // vertical
+        uint16_t ciram_mask =  0b001111111111;
+        uint16_t mirror_mask = 0b010000000000;
+        addr = addr & (mirror_mask | ciram_mask);
 
-        // unreachable, abort
-        error(UNREACHABLE, "This line should not be reachable");
-        assert(0);
+        nes->ciram[addr] = byte;
+        return;
     }
 
     // palette [0x3F00, 0x3FFF]
     if (addr <= 0x3FFF) {
         //nlog("ppu_bus_write: 0x%04X (pc: 0x%04X) with value 0x%02X", addr, nes->pc, byte);
-        if (addr % 4 == 0) nes->palette[0] = byte;
+        if (addr % 4 == 0) nes->palette[addr & 0x0F] = byte;
         else nes->palette[addr & 0x1F] = byte;
+        /*if (addr % 4 == 0 && addr) nes->palette[0] = byte;
+        else nes->palette[addr & 0x1F] = byte;*/
         return;
     }
 
