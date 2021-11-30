@@ -66,10 +66,9 @@ uint8_t step_ppu(struct Nes* nes, uint8_t cycles, uint8_t* pixels) {
             uint8_t pixel = (high_bits >> pixel_index) % 2 << 1 | (low_bits >> pixel_index) % 2;
 
             // put
-            if (pixel == 0) {
-                palette_id = 0;
-            }
-            pixels[pixel_x + pixel_y * NAMETABLE_WIDTH * TILE_SIZE] = nes->palette[4 * palette_id + pixel]; 
+            if (pixel == 0) palette_id = 0;
+            uint8_t color = ppu_bus_read(nes, 0x3F00 + 4 * palette_id + pixel);
+            pixels[pixel_x + pixel_y * NAMETABLE_WIDTH * TILE_SIZE] = color; 
             continue;
         }
 
