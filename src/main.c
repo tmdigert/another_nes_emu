@@ -41,7 +41,9 @@ int main(int argc, char** argv) {
     // load nes
     struct Nes nes;
     init_nes(&nes, cartridge);
-
+    
+    uint8_t apu_len_lookup[] = {10, 16, 20, 5, 40, 5, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30};
+    
     // Render
     uint8_t lookup[] = {
         84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -65,6 +67,58 @@ int main(int argc, char** argv) {
     // allocate pixel space
     uint8_t* screen_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
     uint8_t* nes_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT);
+    
+    uint8_t p1_halt_flg;
+    uint8_t p1_vol_flg;
+    uint8_t p1_length_ctr;
+    uint8_t p1_duty;
+    uint8_t p1_timer_lo;
+    uint8_t p1_timer_hi;
+    uint8_t p1_vol_val;
+    uint8_t p1_len;
+    uint8_t p1_stat;
+
+    uint8_t p2_halt_flg;
+    uint8_t p2_vol_flg;
+    uint8_t p2_length_ctr;
+    uint8_t p2_duty;
+    uint8_t p2_timer_lo;
+    uint8_t p2_timer_hi;
+    uint8_t p2_vol_val;
+    uint8_t p2_len;
+    uint8_t p2_stat;
+
+    uint8_t tri_lin_ctl;
+    uint8_t tri_lin_ld;
+    uint8_t tri_lo;
+    uint8_t tri_len_ld;
+    uint8_t tri_hi;
+    uint8_t tri_stat;
+
+    uint8_t p1_count = 0;
+    uint8_t p2_count = 0;
+    uint8_t tri_count = 0;
+
+    uint8_t frame_mode;
+
+    uint8_t tri_count_halt = 0;
+
+    Mix_Chunk *pulse_master = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p1_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p1_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *p2_duty_125 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_50 = Mix_LoadWAV("square_256hz_no_duty.wav");
+    Mix_Chunk *p2_duty_25n = Mix_LoadWAV("square_256hz_no_duty.wav");
+
+    Mix_Chunk *tri_master = Mix_LoadWAV("tri_128hz_short.wav");
+    Uint8* tri_mstr_buf = tri_master -> abuf;
+  	Uint32 tri_mstr_len = tri_master -> alen;
+
 
     // run n vblanks of rom
     int acc_cycle = 7;
@@ -77,7 +131,240 @@ int main(int argc, char** argv) {
 
         if (step_ppu(&nes, 3 * cycle, nes_pixels)) {
             vblanks += 1;
+            p1_stat = (nes.apu_status) & 0b1;
+            p2_stat = (nes.apu_status >> 1) & 0b1;
+            tri_stat = (nes.apu_status >> 2) & 0b1;
+            if(tri_stat == 0b0){
+              nlog("stop tri");
+              Mix_HaltChannel(2);
+              //tri_master -> abuf = tri_mstr_buf;
+              //tri_master -> alen = tri_mstr_len;
+              //nes.update_tri = 0;
+              //nes.apu_read = 0;
+            }
+            if(p1_stat == 0b0){
+              nlog("stop p1");
+              Mix_HaltChannel(0);
+            }
+            if(p2_stat == 0b0){
+              nlog("stop p2");
+              Mix_HaltChannel(1);
+            }
 
+
+            if(tri_count_halt == 0){ //decrement counter
+              if(tri_count == 0){
+                Mix_HaltChannel(2);
+              }
+              else{
+                tri_count -= 1;
+              }
+
+            }
+            else{
+              nlog("tri count halt");
+            }
+            if(p1_halt_flg == 0){ //decrement counter
+              if(p1_count == 0){
+                Mix_HaltChannel(0);
+              }
+              else{
+                p1_count -= 1;
+              }
+
+            }
+            else{
+              nlog("p1 count halt");
+            }
+            if(p2_halt_flg == 0){ //decrement counter
+              if(p2_count == 0){
+                Mix_HaltChannel(0);
+              }
+              else{
+                p2_count -= 1;
+              }
+
+            }
+            else{
+              nlog("p2 count halt");
+            }
+
+
+                        if(nes.apu_read == 1){
+
+                          nes.apu_read = 0;
+
+                          p1_duty = (nes.pulse_1_1 >> 6) & 0b11;
+                          p1_halt_flg = (nes.pulse_1_1 >> 5) & 1;
+                          p1_vol_flg = (nes.pulse_1_1 >> 4) & 1;
+                          p1_vol_val = (nes.pulse_1_1) & 0b1111;
+
+                          p1_timer_lo = nes.pulse_1_3;
+
+                          p1_timer_hi = nes.pulse_1_4 & 0b111;
+                          p1_length_ctr = (nes.pulse_1_4 >> 3) & 0b11111;
+
+                          p2_duty = (nes.pulse_2_1 >> 6) & 0b11;
+                          p2_halt_flg = (nes.pulse_2_1 >> 5) & 1;
+                          p2_vol_flg = (nes.pulse_2_1 >> 4) & 1;
+                          p2_vol_val = (nes.pulse_2_1) & 0b1111;
+
+                          p2_timer_lo = nes.pulse_2_3;
+
+                          p2_timer_hi = nes.pulse_2_4 & 0b111;
+                          p2_length_ctr = (nes.pulse_2_4 >> 3) & 0b11111;
+
+
+                          tri_lin_ctl = (nes.tri_1 >> 7) & 1;
+                          tri_lin_ld = (nes.tri_1) & 0b1111111;
+
+                          tri_lo = nes.tri_2;
+                          tri_len_ld = nes.tri_3 >> 3;
+                          tri_hi = nes.tri_3 & 0b111;
+
+                          frame_mode = (nes.frame_count >> 7) & 0b1;
+
+                          //if(nes.apu_read == 1){
+
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          //if(SDL_GetTicks()%1000 == 0){
+                            //nlog("%i\n", tri_stat);
+                          //}
+
+                          if(p1_stat == 0b1 && nes.update_p1){
+
+                            if(Mix_Playing(0) == 1){
+                              Mix_HaltChannel(0);
+                            }
+
+                          p1_count = apu_len_lookup[p1_length_ctr] / 5;
+
+                          int cur_vol = (p1_vol_val) * 8;
+
+                          Mix_PlayChannel(0, pulse_master, -1);
+                          Mix_Volume(0, cur_vol);
+
+                          if(p1_vol_flg == 1){
+                            Mix_FadeOutChannel(0, (int)(p1_count * 5));
+                          }
+
+
+                          nes.apu_read = 0;
+                          nes.update_p1 = 0;
+
+                          }
+                          if(p2_stat == 0b1 && nes.update_p2){
+
+                            if(Mix_Playing(1) == 1){
+                              Mix_HaltChannel(1);
+                          }
+
+                          p2_count = apu_len_lookup[p2_length_ctr] / 5;
+
+                          int cur_vol = (p2_vol_val) * 8;
+
+                          Mix_PlayChannel(1, pulse_master, -1);
+                          Mix_Volume(1, cur_vol);
+
+                          if(p2_vol_flg == 1){
+                            Mix_FadeOutChannel(1, (int)(p2_count * 5));
+                          }
+
+
+                          nes.apu_read = 0;
+                          nes.update_p1 = 0;
+                          }
+
+                          if(tri_stat == 0b1 && nes.update_tri == 1){
+                            if(Mix_Playing(2) == 1){
+                              Mix_HaltChannel(2);
+                              //tri_master -> abuf = tri_mstr_buf;
+                          		//tri_master -> alen = tri_mstr_len;
+                            }
+
+
+                            int tri_timer = (int)(tri_lo + (tri_hi * 0b100000000));
+                            int tri_freq = (1789773/(16*(tri_timer + 1)));
+                            float note_ratio = ((float)tri_freq/(float)128);
+                            int new_sample = 44100;
+                            //if(tri_freq < 10000){
+                              new_sample = (int)(note_ratio * 44100);
+                            //}
+                            //int tri_count = (int)(4*60*tri_freq);
+                            //int tri_timer_int = checked((int)tri_timer_int);
+
+                            uint16_t frm_dat;
+                          	int chan_dat;
+
+                          	Mix_QuerySpec(NULL, &frm_dat, &chan_dat);
+                            nlog("length val: %i\n", apu_len_lookup[tri_len_ld]);
+                            uint8_t len_cand = apu_len_lookup[tri_len_ld] / 5;
+                            /*
+                            SDL_AudioCVT new_tone;
+
+                            SDL_BuildAudioCVT(&new_tone, frm_dat, chan_dat, new_sample, frm_dat, chan_dat, 44100);
+
+                            new_tone.buf = (uint8_t*)SDL_malloc(new_tone.len*new_tone.len_mult);
+                            new_tone.len = tri_master->alen;
+
+                            SDL_ConvertAudio(&new_tone);
+                            SDL_memcpy(new_tone.buf, tri_master->abuf, tri_master->alen);
+                            */
+                            //tri_master -> abuf = new_tone.buf;
+                        		//tri_master -> alen = new_tone.len_cvt;
+
+                            uint8_t lin_cand = tri_lin_ld / 5;
+                            if(len_cand >= lin_cand){
+                              tri_count = len_cand;
+                            }
+                            else{
+                              tri_count = lin_cand;
+                            }
+
+                            //nlog("tri len: ")
+
+                            if(tri_lin_ctl == 0){
+                              tri_count_halt = 0;
+
+                            }
+                            else{
+                              tri_count_halt = 1;
+                            }
+
+                            //nlog("%i\n", tri_lin_ld);
+                            nlog("freq: %i\n", tri_freq);
+                            nlog("sample: %i\n", new_sample);
+                            //nlog("tri_ctl: %i\n", tri_lin_ctl);
+                            /*
+                            if(nes.tri_1 == 0){
+                               int n = 1;
+                            }
+                            else{
+                              if(tri_lin_ctl == 0){
+                                tri_count = (tri_len_ld/4);
+                              }
+                              else{
+                                int n = 1;
+                              }
+
+                            }*/
+                            nlog("Length: %i\n", tri_count);
+                            //if(frame_mode == 1){
+                           //  nlog("frame mode!");
+                            //}
+                            //nlog("Play!");
+                            Mix_PlayChannel(2, tri_master, -1);
+                            nlog("Done!");
+                            //tri_stat = 0;
+                            nes.update_tri = 0;
+
+                            nes.apu_read = 0;
+                          }
+
+
+                        }
             // debug render nametable
             uint8_t nametable_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
             draw_ppu_nametables(&nes, nametable_pixels);
@@ -149,6 +436,19 @@ int main(int argc, char** argv) {
     }
 
 exit:
+    
+    Mix_FreeChunk(pulse_master);
+    Mix_FreeChunk(p1_duty_125);
+    Mix_FreeChunk(p1_duty_25);
+    Mix_FreeChunk(p1_duty_50);
+    Mix_FreeChunk(p1_duty_25n);
+
+    Mix_FreeChunk(p2_duty_125);
+    Mix_FreeChunk(p2_duty_25);
+    Mix_FreeChunk(p2_duty_50);
+    Mix_FreeChunk(p2_duty_25n);
+
+    Mix_FreeChunk(tri_master);
 
     //
     settings_write_to_file(&settings, "settings.conf");
