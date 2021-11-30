@@ -42,6 +42,9 @@ int main(int argc, char** argv) {
     struct Nes nes;
     init_nes(&nes, cartridge);
 
+    // savestates (NOTE: These wont work on non-NROM games!")
+    struct Nes* savestates[12] = { NULL };
+
     // Render
     uint8_t lookup[] = {
         84, 84, 84, 0, 30, 116, 8, 16, 144, 48, 0, 136, 68, 0, 100, 92, 0, 48, 84, 4, 0, 60, 24, 0, 32, 42, 0, 8, 58, 0, 0, 64, 0, 0, 60, 0, 0, 50, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -50,6 +53,7 @@ int main(int argc, char** argv) {
         236, 238, 236, 168, 204, 236, 188, 188, 236, 212, 178, 236, 236, 174, 236, 236, 174, 212, 236, 180, 176, 228, 196, 144, 204, 210, 120, 180, 222, 120, 168, 226, 144, 152, 226, 180, 160, 214, 228, 160, 162, 160, 0, 0, 0, 0, 0, 0
     };
 
+    // settings
     struct Settings settings;
     settings_load_from_file(&settings, "settings.conf");
 
@@ -59,8 +63,8 @@ int main(int argc, char** argv) {
     // create windows
     SDL_Window* window = SDL_CreateWindow("NES Emu", 1920/2, 1080/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     assert(window);
-    SDL_Window* nametable_window = SDL_CreateWindow("NES Emu: Nametable", 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 0);
-    assert(nametable_window);
+    //SDL_Window* nametable_window = SDL_CreateWindow("NES Emu: Nametable", 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 0);
+    //assert(nametable_window);
 
     // allocate pixel space
     uint8_t* screen_pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
@@ -79,7 +83,7 @@ int main(int argc, char** argv) {
             vblanks += 1;
 
             // debug render nametable
-            uint8_t nametable_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
+            /*uint8_t nametable_pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
             draw_ppu_nametables(&nes, nametable_pixels);
             uint8_t nametable_rgb[SCREEN_WIDTH * SCREEN_HEIGHT * 4 * 3];
             for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT * 4; i++) {
@@ -90,7 +94,7 @@ int main(int argc, char** argv) {
             SDL_Surface* temp = SDL_CreateRGBSurfaceFrom(nametable_rgb, 2 * SCREEN_WIDTH, 2 * SCREEN_HEIGHT, 24, 3 * 2 * SCREEN_WIDTH, 0x0000FF, 0x00FF00, 0xFF0000, 0);
             SDL_BlitSurface(temp, 0, SDL_GetWindowSurface(nametable_window), 0);
             SDL_UpdateWindowSurface(nametable_window); 
-            SDL_FreeSurface(temp);
+            SDL_FreeSurface(temp);*/
 
             // TEMP
             draw_oam_sprites(&nes, nes_pixels);
@@ -121,6 +125,34 @@ int main(int argc, char** argv) {
             state |= keyboard[settings.b] << 1;
             state |= keyboard[settings.a] << 0;
             nes.input1 = state;
+
+            char fcodes[12];
+            fcodes[0] = keyboard[SDL_SCANCODE_F1];
+            fcodes[1] = keyboard[SDL_SCANCODE_F2];
+            fcodes[2] = keyboard[SDL_SCANCODE_F3];
+            fcodes[3] = keyboard[SDL_SCANCODE_F4];
+            fcodes[4] = keyboard[SDL_SCANCODE_F5];
+            fcodes[5] = keyboard[SDL_SCANCODE_F6];
+            fcodes[6] = keyboard[SDL_SCANCODE_F7];
+            fcodes[7] = keyboard[SDL_SCANCODE_F8];
+            fcodes[8] = keyboard[SDL_SCANCODE_F9];
+            fcodes[9] = keyboard[SDL_SCANCODE_F10];
+            fcodes[10] = keyboard[SDL_SCANCODE_F11];
+            fcodes[11] = keyboard[SDL_SCANCODE_F12];
+            for (int i = 0; i < 12; i++) {
+                if (fcodes[i]) {
+                    if (keyboard[SDL_SCANCODE_LSHIFT]) {
+                        if (savestates[i] == 0) savestates[i] = malloc(sizeof(struct Nes));
+                        *savestates[i] = nes;
+                    } else {
+                        if (savestates[i] != 0) nes = *savestates[i];
+                    }
+                }
+            }
+
+            if (keyboard[SDL_SCANCODE_F1]) {
+
+            }
 
             // convert NES pixel to RGB pixels
             for (int y = 0; y < SCREEN_HEIGHT; y++) {
@@ -155,9 +187,11 @@ exit:
 
     // free render
     SDL_DestroyWindow(window);
-    SDL_DestroyWindow(nametable_window);
+    //SDL_DestroyWindow(nametable_window);
     free(screen_pixels);
     free(nes_pixels);
+
+    for (int i = 0; i < 12; i++) free(savestates[i]);
 
     // free nes
     free_nes(&nes);
