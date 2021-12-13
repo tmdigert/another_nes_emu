@@ -72,7 +72,7 @@ uint8_t cpu_bus_read(struct Nes* nes, uint16_t addr) {
 
 // Maps writes originating from the CPU to the correct component.
 // https://wiki.nesdev.org/w/index.php/CPU_memory_map
-void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) { 
+void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
     // Range [0x0000, 0x1FFF]: CPU RAM.
     if (addr <= 0x1FFF) {
         nes->ram[addr & 0x07FF] = byte;
@@ -112,7 +112,7 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
             }
             // ppudata
             case 0x2007: {
-                ppu_bus_write(nes, nes->ppuaddr, byte); 
+                ppu_bus_write(nes, nes->ppuaddr, byte);
                 nes->ppuaddr += ((nes->ppuctrl & 0b0100) > 0) * 31 + 1;
                 return;
             }
@@ -127,9 +127,82 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
 
     // Range [0x4000, 0x4017]: APU and IO registers.
     if (addr <= 0x4017) {
-        // TODO: implement
         switch (addr) {
-            // input polling
+            //APU registers
+            case 0x4000: {
+                nes->apu_read = 1;
+                nes->update_p1 = 1;
+                nes->pulse_1_1 = byte;
+            }break;
+            case 0x4001: {
+              nes->apu_read = 1;
+              nes->update_p1 = 1;
+              nes->pulse_1_2 = byte;
+            }break;
+            case 0x4002: {
+              nes->apu_read = 1;
+              nes->update_p1 = 1;
+              nes->pulse_1_3 = byte;
+            }break;
+            case 0x4003: {
+              nes->apu_read = 1;
+              nes->update_p1 = 1;
+              nes->pulse_1_4 = byte;
+            }break;
+            case 0x4004: {
+              nes->apu_read = 1;
+              nes->update_p2 = 1;
+              nes->pulse_2_1 = byte;
+            }break;
+            case 0x4005: {
+              nes->apu_read = 1;
+              nes->update_p2 = 1;
+              nes->pulse_2_2 = byte;
+            }break;
+            case 0x4006: {
+              nes->apu_read = 1;
+              nes->update_p2 = 1;
+              nes->pulse_2_3 = byte;
+            }break;
+            case 0x4007: {
+              nes->apu_read = 1;
+              nes->update_p2 = 1;
+              nes->pulse_2_4 = byte;
+            }break;
+            case 0x4008: {
+              nlog("tri_1: %i", byte);
+              nes->tri_1 = byte;
+              if(byte != 16){
+                nes->apu_read = 1;
+                nes->update_tri = 1;
+              }
+            }break;
+            case 0x4009: {
+                int8_t placehold = 1;
+            }break;
+            case 0x400A: {
+              nlog("tri_2: %i", byte);
+              nes->apu_read = 1;
+              nes->tri_2 = byte;
+              nes->update_tri = 1;
+            }break;
+            case 0x400B: {
+              nlog("tri_3: %i", byte);
+              nes->apu_read = 1;
+              nes->tri_3 = byte;
+              nes->update_tri = 1;
+            }break;
+            case 0x4015:{
+              nlog("status write: %i", byte);
+              nes->apu_read = 1;
+              nes->apu_status = byte;
+            }break;
+            case 0x4017:{
+
+              nes->apu_read = 1;
+              nes->frame_count = byte;
+            }break;
+            // input polling for controller
             case 0x4016: {
                 // write 1 or 0?
                 if (byte == 1) {
@@ -189,7 +262,7 @@ uint8_t ppu_bus_read(struct Nes* nes, uint16_t addr) {
         uint16_t mirror_mask = 0b010000000000;
         addr = addr & (mirror_mask | ciram_mask);
 
-        // 
+        //
         return nes->ciram[addr];
     }
 
