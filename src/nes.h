@@ -23,6 +23,30 @@ struct Nes {
     uint8_t joy1;
     uint8_t joy2;
 
+    //APU
+    uint8_t apu_read; //set when registers update, then main sets to 0 after read
+    uint8_t apu_status;
+
+    uint8_t pulse_1_1;
+    uint8_t pulse_1_2;
+    uint8_t pulse_1_3;
+    uint8_t pulse_1_4;
+    uint8_t update_p1;
+
+    uint8_t pulse_2_1;
+    uint8_t pulse_2_2;
+    uint8_t pulse_2_3;
+    uint8_t pulse_2_4;
+    uint8_t update_p2;
+
+    uint8_t tri_1;
+    uint8_t tri_2;
+    uint8_t tri_3;
+    uint8_t tri_status;
+    uint8_t update_tri;
+
+    uint8_t frame_count;
+
     // CPU
     uint8_t ram[0x0800];
     uint8_t acc;
@@ -30,7 +54,7 @@ struct Nes {
     uint16_t pc;
     uint8_t sp;
     uint8_t status;
-    // interrupt 
+    // interrupt
     uint8_t reset;
     uint8_t nmi;
     // CPU micro
