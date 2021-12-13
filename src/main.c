@@ -155,15 +155,13 @@ int main(int argc, char** argv) {
             tri_stat = (nes.apu_status >> 2) & 0b1;
 
             //Check time counters for APU channels
-            if(tri_stat == 0b0){
-              nlog("stop tri");
+            if(tri_stat == 0b0){\
               Mix_HaltChannel(2);
               //Tone-Shifted buffer restore
               //tri_master -> abuf = tri_mstr_buf;
               //tri_master -> alen = tri_mstr_len;
             }
-            if(p1_stat == 0b0){
-              nlog("stop p1");
+            if(p1_stat == 0b0){\
               Mix_HaltChannel(0);
             }
             //
@@ -183,9 +181,6 @@ int main(int argc, char** argv) {
               }
 
             }
-            else{
-              nlog("tri count halt");
-            }
             if(p1_halt_flg == 0){ //decrement counter
               if(p1_count == 0){
                 Mix_HaltChannel(0);
@@ -194,9 +189,6 @@ int main(int argc, char** argv) {
                 p1_count -= 1;
               }
 
-            }
-            else{
-              nlog("p1 count halt");
             }
             /*
             if(p2_halt_flg == 0){ //decrement counter
