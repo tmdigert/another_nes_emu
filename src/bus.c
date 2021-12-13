@@ -170,7 +170,6 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
               nes->pulse_2_4 = byte;
             }break;
             case 0x4008: {
-              nlog("tri_1: %i", byte);
               nes->tri_1 = byte;
               if(byte != 16){
                 nes->apu_read = 1;
@@ -181,19 +180,16 @@ void cpu_bus_write(struct Nes* nes, uint16_t addr, uint8_t byte) {
                 int8_t placehold = 1;
             }break;
             case 0x400A: {
-              nlog("tri_2: %i", byte);
               nes->apu_read = 1;
               nes->tri_2 = byte;
               nes->update_tri = 1;
             }break;
             case 0x400B: {
-              nlog("tri_3: %i", byte);
               nes->apu_read = 1;
               nes->tri_3 = byte;
               nes->update_tri = 1;
             }break;
             case 0x4015:{
-              nlog("status write: %i", byte);
               nes->apu_read = 1;
               nes->apu_status = byte;
             }break;
